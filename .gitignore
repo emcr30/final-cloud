@@ -1,0 +1,27 @@
+# Dependencias y builds
+node_modules/
+dist/
+dist-ssr/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Secretos: nunca se suben (usar .env.example como plantilla)
+.env
+.env.*
+!.env.example
+
+# Supabase CLI (archivos locales)
+supabase/.branches/
+supabase/.temp/
+
+# Sistema / editores
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

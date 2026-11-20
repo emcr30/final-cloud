@@ -1,0 +1,12 @@
+# Framework web y servidor ASGI
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+# Configuración desde variables de entorno / .env
+pydantic-settings==2.9.1
+# Clientes de servicios externos
+supabase==2.15.1
+stripe==12.1.0
+resend==2.10.0
+# Pruebas
+pytest==8.3.5
+httpx==0.28.1

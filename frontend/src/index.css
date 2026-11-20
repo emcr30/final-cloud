@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/*
+ * Paleta de CanchaYa: verde césped + blanco + gris oscuro.
+ * Se usan como clases de Tailwind: bg-cesped-600, text-cesped-700, etc.
+ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-cesped-50: #f0fdf4;
+  --color-cesped-100: #dcfce7;
+  --color-cesped-200: #bbf7d0;
+  --color-cesped-300: #86efac;
+  --color-cesped-400: #4ade80;
+  --color-cesped-500: #22c55e;
+  --color-cesped-600: #16a34a;
+  --color-cesped-700: #15803d;
+  --color-cesped-800: #166534;
+  --color-cesped-900: #14532d;
+}
+
+body {
+  @apply bg-white text-gray-800 antialiased;
+}
