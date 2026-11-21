@@ -47,8 +47,7 @@ UptimeRobot → GET /health del backend (monitoreo + evita que Render duerma)
 **RLS en todas las tablas**: jugador ve solo sus reservas; propietario ve solo complejos/canchas/reservas de sus complejos; admin ve todo; complejos y canchas activos son de lectura pública. Helper `public.mi_rol()` (security definer). Las escrituras de rol y de estado de pago solo desde backend (service role).
 
 ## Reglas de trabajo
-- Commits pequeños en español con prefijo (`feat:`, `fix:`, `docs:`, `chore:`). Al terminar cada parte: solo commit **local**.
-- **Nunca hacer `git push` ni nada que suba cambios a GitHub** (push, PR, merge remoto, borrar ramas remotas). Eso lo hace solo quien administra el repo. Antes de cualquier acción sobre GitHub, avisar y esperar confirmación.
+- **Claude NO hace commits ni push** (ni `git commit`, `git merge`, `git push`, PR, ni nada que cambie el historial o GitHub). Todos los commits y pushes los hace solo quien administra el repo. Claude deja los cambios en el directorio de trabajo y, al terminar cada parte, sugiere un mensaje de commit en español con prefijo (`feat:`, `fix:`, `docs:`, `chore:`).
 - Nunca subir secretos: usar `.env` (en `.gitignore`) y `.env.example` documentado.
 - Moneda PEN (si Stripe en modo prueba no la acepta, usar USD y anotarlo en docs).
 - Zona horaria America/Lima.

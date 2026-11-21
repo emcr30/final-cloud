@@ -22,8 +22,11 @@ export default function Registro() {
   const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
-    if (session && perfil) navigate(rutaPanel(perfil.rol), { replace: true })
-  }, [session, perfil, navigate])
+    if (!session || !perfil) return
+    // Si vino desde "Registra tu complejo" y es jugador, lo llevamos directo a la solicitud
+    const destino = quiereComplejo && perfil.rol === 'jugador' ? '/jugador/solicitar-complejo' : rutaPanel(perfil.rol)
+    navigate(destino, { replace: true })
+  }, [session, perfil, navigate, quiereComplejo])
 
   const cambiar = (campo: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [campo]: e.target.value })

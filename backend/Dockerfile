@@ -20,5 +20,7 @@ USER appuser
 
 EXPOSE 8000
 
-# Render inyecta $PORT; en local se usa 8000
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# Render inyecta $PORT; en local se usa 8000.
+# --proxy-headers: toma la IP real del cliente de X-Forwarded-For (Render está detrás de un proxy),
+# necesario para que el rate limit cuente por usuario y no por el proxy.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips='*'"]

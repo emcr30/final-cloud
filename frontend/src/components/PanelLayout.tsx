@@ -1,9 +1,11 @@
+import { Suspense } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import {
   BarChart3, Building2, CalendarDays, CalendarCheck, LayoutDashboard, LogOut,
   Map, ScrollText, Settings, User, Users, type LucideIcon,
 } from 'lucide-react'
 import { useAuth, type Rol } from '../context/AuthContext'
+import { Cargando } from './ui'
 
 interface Opcion { to: string; label: string; icono: LucideIcon; end?: boolean }
 
@@ -13,6 +15,7 @@ const MENU: Record<Rol, Opcion[]> = {
     { to: '/jugador', label: 'Inicio', icono: LayoutDashboard, end: true },
     { to: '/canchas', label: 'Buscar canchas', icono: Map },
     { to: '/jugador/reservas', label: 'Mis reservas', icono: CalendarCheck },
+    { to: '/jugador/solicitar-complejo', label: 'Registrar mi complejo', icono: Building2 },
   ],
   propietario: [
     { to: '/propietario', label: 'Dashboard', icono: BarChart3, end: true },
@@ -65,7 +68,10 @@ export default function PanelLayout() {
         </nav>
       </aside>
       <section className="min-w-0 flex-1">
-        <Outlet />
+        {/* Suspense aquí: al cambiar de sección, el menú lateral se queda y solo carga el contenido */}
+        <Suspense fallback={<Cargando />}>
+          <Outlet />
+        </Suspense>
       </section>
     </div>
   )

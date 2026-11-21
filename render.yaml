@@ -1,0 +1,42 @@
+# Blueprint de Render para el backend de CanchaYa (FastAPI en Docker).
+# Render → New → Blueprint → elegir este repositorio. Las variables con
+# "sync: false" se piden en el dashboard al crear el servicio (son secretas
+# y NO se guardan en el repositorio).
+services:
+  - type: web
+    name: canchaya-api
+    runtime: docker
+    plan: free
+    region: virginia            # la más cercana a Supabase São Paulo entre las de Render
+    rootDir: backend            # solo cambios en backend/ redespliegan
+    dockerfilePath: ./backend/Dockerfile   # relativo a la raíz del repo
+    dockerContext: ./backend
+    healthCheckPath: /health    # Render reinicia el servicio si deja de responder
+    autoDeploy: true            # cada push a main redespliega
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: TIMEZONE
+        value: America/Lima
+      - key: MONEDA
+        value: pen
+      - key: EMAIL_FROM
+        value: CanchaYa <onboarding@resend.dev>
+      - key: MINUTOS_EXPIRACION_PENDIENTE
+        value: "15"
+      # URL del frontend en Vercel (CORS y redirecciones de Stripe), p. ej. https://canchaya.vercel.app
+      - key: FRONTEND_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      # Debe ser IGUAL al CRON_SECRET de backend/.env, de la Edge Function y de Vault
+      - key: CRON_SECRET
+        sync: false

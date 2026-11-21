@@ -127,3 +127,192 @@ Plantilla para cada parte:
 
 **Notas**
 - `supabase db push --include-seed` no vuelve a ejecutar un seed ya aplicado (solo actualiza su hash). Para recargarlo: `supabase db query --remote -f supabase/seed.sql`.
+
+## Parte 5 — Pagos con Stripe y correo de confirmación (21-nov-2026)
+
+**Hecho**
+- Backend (`backend/app/`):
+  - `servicios/pagos.py`: lógica de Stripe Checkout (modo prueba, **moneda PEN**: Stripe de prueba la acepta, verificado).
+    - `crear_checkout()`: valida que la reserva sea del usuario y esté `pendiente_pago`, crea la sesión ("Reserva Cancha X - Complejo - fecha hora"), guarda `stripe_session_id` y devuelve la URL. Si el jugador pulsa "Pagar" otra vez, reutiliza la sesión abierta.
+    - `confirmar_pago()`: **idempotente**. Un `UPDATE ... WHERE estado = 'pendiente_pago'` actúa de candado: solo la primera llamada (página de éxito o webhook) marca `pagada`, inserta en `pagos` (upsert por `stripe_session_id`) y envía el correo.
+    - `limpiar_pendientes()`: cancela reservas pendientes con más de 15 min (`MINUTOS_EXPIRACION_PENDIENTE`). Antes **expira la sesión de Stripe** para que ya no se pueda pagar; si resulta que sí se pagó, confirma en vez de cancelar.
+  - `servicios/correo.py`: correo HTML con Resend (datos de la reserva, dirección y enlace a Google Maps; textos escapados contra inyección de HTML). Todo envío se registra en `notificaciones_log` (`enviado` / `error` / `omitido`); si Resend falla, el pago no se cae.
+  - `routers/pagos.py`: `POST /pagos/checkout`, `POST /pagos/verificar` (solo el dueño del pago o un admin), `POST /pagos/webhook` (verifica la firma `Stripe-Signature`; responde 503 si falta `STRIPE_WEBHOOK_SECRET`).
+  - `routers/tareas.py`: `POST /tareas/limpiar-pendientes` protegido con el header `X-Cron-Secret` (comparación en tiempo constante). Lo programará pg_cron en la Parte 8.
+  - `tests/test_pagos.py`: 9 pruebas nuevas (401 sin token, webhook sin secreto/firma falsa, X-Cron-Secret, céntimos, fecha en español, escape de HTML). Total: **23 pruebas en verde**.
+- Frontend: `/pago/exito` (llama a `/pagos/verificar` y muestra el comprobante con "Cómo llegar" e "Imprimir") y `/pago/cancelado`. "Reservar y pagar" y "Pagar" en Mis reservas ya redirigen a Stripe.
+- Usuario demo extra: `echipanar@ulasalle.edu.pe` (jugador) para recibir los correos de Resend.
+
+**Cómo probar**
+1. Backend: `cd backend && .venv/bin/uvicorn app.main:app --reload` (desde `final-cloud`, no desde `.claude/worktrees`). Frontend: `cd frontend && npm run dev`.
+2. Entrar con `echipanar@ulasalle.edu.pe` / `Demo1234!` → `/canchas` → elegir complejo, cancha, fecha y hora → **Reservar y pagar**.
+3. En Stripe usar la tarjeta de prueba **4242 4242 4242 4242**, cualquier fecha futura (ej. 12/34), cualquier CVC (ej. 123) y cualquier nombre.
+4. Vuelve a `/pago/exito` con el comprobante; la reserva aparece **Pagada** en Mis reservas y llega el correo de confirmación.
+5. Pago cancelado: en Stripe pulsar "←" → `/pago/cancelado`; la reserva queda pendiente y se puede pagar desde Mis reservas.
+6. Limpieza manual: `curl -X POST http://localhost:8000/tareas/limpiar-pendientes -H "X-Cron-Secret: <CRON_SECRET>"`.
+7. Prueba automática ejecutada el 21-nov-2026 contra Stripe y Supabase reales (todas OK): checkout devuelve URL de Stripe; segundo clic reutiliza la sesión; otro jugador → 403; verificar sin pagar → 402; verificar sesión ajena → 403; limpiar sin secreto → 401; limpiar con secreto cancela la reserva vieja y **expira la sesión de Stripe**.
+
+**Pendiente / notas**
+- El camino "pago aprobado → correo" requiere pagar en el navegador; queda para la prueba manual (paso 2-4).
+- Webhook en local (opcional): `stripe listen --forward-to localhost:8000/pagos/webhook` y copiar el `whsec_...` que muestra a `STRIPE_WEBHOOK_SECRET`. En producción se configura en la Parte 9.
+- Resend sin dominio propio solo entrega al correo dueño de la cuenta de Resend.
+- Cancelar una reserva pagada no genera reembolso automático (modo prueba).
+
+## Verificación de las Partes 4 y 5 (21-nov-2026, noche)
+
+**Hecho**
+- `scripts/crear_usuarios_demo.py` ejecutado: 5 usuarios demo actualizados, incluido `echipanar@ulasalle.edu.pe` (jugador, `Demo1234!`).
+- `npm run build`, `npm run lint` (0 avisos) y `pytest` (23 pruebas) en verde.
+- Prueba E2E por API contra Supabase y Stripe reales (todas OK): `/health`; `/me` del jugador; anónimo ve 5 complejos; disponibilidad; crear reserva (monto 1 → recalculado a 120.00); duplicada → `23P01`; `POST /pagos/checkout` devuelve URL de `checkout.stripe.com`; segundo clic reutiliza la sesión; otro jugador → 403; verificar sin pagar → 402; verificar sesión ajena → 403; sin token → 401; limpiar sin secreto → 401; cancelar la reserva; la sesión de Stripe se expiró al final.
+- **Correo real con Resend**: se envió el correo de confirmación a `echipanar@ulasalle.edu.pe` (estado `enviado` en `notificaciones_log`, id de Resend `01a1fcaf-…`). Fue una prueba directa del servicio `correo.enviar_confirmacion`; el camino completo "pagar con tarjeta 4242 → correo" requiere el navegador (ver `docs/PENDIENTES_EVELYN.md`).
+
+**Notas**
+- No faltaba nada para completar las Partes 4 y 5.
+
+## Parte 6 — Panel del propietario y aislamiento multi-tenant (21-nov-2026)
+
+**Hecho**
+- Migración `20261122000100_propietario_metricas.sql` (aplicada en remoto con `supabase db push`):
+  - **MFA también en la base**: política `RESTRICTIVE` en `complejos`, `canchas`, `reservas`, `pagos` y `notificaciones_log` con `public.mfa_ok()`: si tu rol es admin o propietario, tu JWT debe tener `aal = aal2`. Quien robe solo la contraseña de un propietario no puede leer su agenda llamando a la API REST. `profiles` queda fuera para que la app pueda leer el rol y mandarlo a `/mfa/verificar`.
+  - **Bloqueos de horario**: columna `reservas.es_bloqueo`. Nueva política: el propietario inserta en SUS canchas una reserva `pagada` + `es_bloqueo` a su nombre; el trigger le pone monto 0. El jugador ya no puede crear reservas con `es_bloqueo` (si no, reservaría gratis). `v_ingresos_diarios` excluye bloqueos.
+  - **`metricas(desde, hasta, complejo)`** (security invoker → RLS filtra): resumen (ingresos, reservas, ocupación %, canceladas, bloqueos), ingresos diarios (con días en cero), ocupación por cancha, horas pico (día × hora) y totales por complejo. Se calcula en Postgres por el límite de 1000 filas de la API.
+- Backend: `GET /reportes/export?formato=csv|pdf&desde&hasta[&complejo_id]` (`routers/reportes.py`, `servicios/reportes.py`, reportlab). `require_role("propietario","admin")` (exige AAL2). Como usa la service role, filtra explícitamente por `propietario_id` (el admin ve todo); pagina de 1000 en 1000; CSV con BOM para Excel. `tests/test_reportes.py`: 8 pruebas (401, 403 jugador, propietario no ve datos de otro, complejo ajeno → 404, PDF, rango inválido, bloqueos no son ingreso). **31 pruebas en verde.**
+- Frontend (`/propietario/*`):
+  - **Dashboard** (`pages/propietario/Dashboard.tsx`): filtros en una fila (complejo + rango con atajos 7/30 días, este mes, 90 días), KPIs, ingresos por día (barras, tooltip), ocupación por cancha (barras horizontales) y **heatmap de horas pico** (grilla CSS en escala de verde). Botones **CSV** y **PDF**. Componentes reutilizables en `components/Graficos.tsx` (los usa también el admin).
+  - **Mis complejos** (`pages/propietario/Complejos.tsx`): tarjetas con estado; crear/editar con `components/FormComplejo.tsx` (horario, distrito con sugerencias de Arequipa, **ubicación con clic en el mapa** → `components/SelectorUbicacion.tsx`, **foto a Supabase Storage** bucket `complejos`). Los nuevos quedan `pendiente`.
+  - **Canchas** (`pages/propietario/Canchas.tsx`): agregar, editar, activar/desactivar; eliminar solo si nunca tuvo reservas (si no, se sugiere desactivar, para no borrar historial).
+  - **Agenda** (`pages/propietario/Agenda.tsx`): semana × horas por cancha, colores por estado con leyenda; clic en reserva → datos del cliente (nombre, teléfono), "Marcar completada" / "Cancelar"; clic en hora libre → "Bloquear este horario".
+- **Prueba de aislamiento multi-tenant**: `supabase/tests/aislamiento_multitenant.sql` (simula el JWT de cada usuario dentro de una transacción con `ROLLBACK`, no cambia datos). **24/24 OK**:
+  - P1 ve sus reservas (1008) pero 0 de P2; 0 pagos y 0 ingresos de P2; `metricas()` le devuelve solo sus 3 complejos y 0 si pide uno de P2.
+  - P1 intenta cambiar precio, editar complejo, cancelar reserva y borrar cancha de P2 → 0 filas; crear cancha o bloqueo en complejo de P2 → error RLS `42501`.
+  - P2 ve sus 735 reservas y 0 de P1; `metricas()` solo sus 2 complejos.
+  - P1 con solo contraseña (aal1) → 0 reservas y 0 pagos (MFA en RLS).
+  - Jugador: 0 reservas ajenas, 0 notificaciones, no puede crear una reserva "pagada" ni cambiarse el rol (`permission denied`). Anónimo: 0 reservas, sí ve el catálogo.
+- Prueba E2E por API (19/19 OK) con un usuario de pruebas propio `qa.propietario@canchaya.demo` (TOTP generado por el script, para tener sesión AAL2 sin tocar los factores de los usuarios demo): P1 con aal1 recibe 0 filas y 403 en el export; QA crea complejo (queda pendiente), no puede autoaprobarse ni crearlo activo, edita su cancha, bloquea un horario (monto 0), el jugador no puede crear bloqueos, métricas y export CSV/PDF funcionan, export de complejo ajeno → 404.
+- Con datos reales (P1, últimos 30 días, simulando su JWT aal2): 886 reservas, S/ 99 350, ocupación 28,1 %.
+
+**Cómo probar**
+1. `supabase db query --remote --yes -f supabase/tests/aislamiento_multitenant.sql` → todas las filas con `ok = true`.
+2. `cd backend && .venv/bin/pytest` → 31 pruebas.
+3. En el navegador con `propietario1@canchaya.demo` (MFA): Dashboard → cambiar rango/complejo, descargar CSV y PDF. Mis complejos → "Nuevo complejo" (clic en el mapa, subir foto) → queda "Pendiente de aprobación"; editar canchas. Agenda → bloquear una hora libre, ver una reserva y marcarla completada.
+
+**Notas**
+- `propietario2@canchaya.demo` aún no tiene MFA: la primera vez que entre le pedirá configurarlo.
+- Usuario de pruebas `qa.propietario@canchaya.demo` con su "Complejo de prueba QA (se puede borrar)" en estado pendiente: sirve para probar la aprobación en el panel admin. Ver `docs/PENDIENTES_EVELYN.md`.
+
+## Parte 7 — Panel del administrador (21-nov-2026)
+
+**Hecho**
+- Migraciones (aplicadas en remoto):
+  - `20261122000200_admin_configuracion.sql`: tabla `configuracion` (una sola fila): `comision_pct` (0-50 %, CHECK) y `minutos_expiracion` (5-120). Solo el admin con MFA la lee/cambia (RLS + política MFA). Trigger que guarda `updated_at` y `updated_by`.
+  - `20261122000300_admin_usuarios.sql`: `admin_listar_usuarios()` (solo service role) une `auth.users` + `profiles` + `auth.mfa_factors` (email, rol, último ingreso, ban, MFA) en una consulta.
+- Backend `routers/admin.py` (todo con `require_role("admin")` → exige AAL2): `GET /admin/resumen`, `GET /admin/usuarios?q=&rol=`, `PATCH /admin/usuarios/{id}/rol`, `POST /admin/usuarios/{id}/suspension` (ban de Supabase Auth), `GET /admin/complejos`, `PATCH /admin/complejos/{id}/estado` (aprobar → activo y el dueño pasa de jugador a propietario), `POST /admin/recordatorios?dry_run=` (llama a la Edge Function de la Parte 8). El admin no puede quitarse su rol ni suspenderse.
+- `limpiar_pendientes()` ahora lee los minutos de `configuracion` (si falla, usa `MINUTOS_EXPIRACION_PENDIENTE`). `httpx` pasó a dependencia de producción.
+- `tests/test_admin.py`: 8 pruebas (401, propietario 403, admin sin MFA 403, no quitarse el rol, no suspenderse, rol inválido 422, ban vigente, crecimiento semanal). **39 pruebas en verde.**
+- Frontend `/admin/*`:
+  - **Dashboard**: rango de fechas; KPIs (usuarios por rol, complejos activos/pendientes/suspendidos, usuarios con MFA, reservas y ocupación global, ingresos de complejos, **comisión simulada** con el % de `configuracion`); ingresos por día; top complejos; nuevos usuarios por semana; mapa con todos los complejos.
+  - **Usuarios**: búsqueda (con retardo de 300 ms), filtro por rol, cambiar rol, suspender/reactivar, MFA activo sí/no, registro y último ingreso.
+  - **Complejos**: pestañas Pendientes/Activos/Suspendidos/Todos; Aprobar, Rechazar, Suspender, Reactivar.
+  - **Actividad**: últimas 30 notificaciones y 30 pagos (los del seed se marcan "dato demo") y botones de recordatorios (Parte 8).
+  - **Configuración**: comisión y minutos de expiración.
+- Jugador: **"Registrar mi complejo"** (`/jugador/solicitar-complejo`) = "solicitar ser propietario": formulario con mapa (sin foto: Storage solo deja subir a propietarios) y estado de sus solicitudes. El botón "Registra tu complejo" de la landing (`/registro?complejo=1`) ahora lleva ahí tras crear la cuenta.
+- Prueba E2E por API (26/26 OK) usando el usuario QA subido temporalmente a admin (con su TOTP) y un segundo usuario `qa.jugador@canchaya.demo`: admin sin MFA → 403 y no lee `configuracion`; resumen; búsqueda y filtro; suspender `jugador@` → no puede iniciar sesión ("banned") → reactivar → vuelve a entrar; cambio de rol ida y vuelta; solicitud de `qa.jugador` → aprobar → complejo público y dueño a propietario → suspender → deja de ser público; configuración (auditada; 99 % rechazado por CHECK; el jugador no puede cambiarla); la limpieza usó los minutos de la configuración; el admin lee notificaciones y pagos. Todo se dejó como estaba (QA de vuelta a propietario, `qa.jugador` a jugador, expiración en 15 min).
+
+**Cómo probar**
+1. `cd backend && .venv/bin/pytest` → 39 pruebas.
+2. Entrar con `admin@canchaya.demo` (la primera vez configura MFA) → Dashboard, Usuarios (suspender y reactivar a `jugador@`), Complejos → pestaña Pendientes → aprobar el "Complejo de prueba QA", Configuración.
+3. Flujo completo de "solicitar ser propietario": registrar una cuenta nueva → "Registrar mi complejo" → como admin aprobarlo → al volver a entrar, ese usuario va a `/mfa/configurar` y luego a `/propietario`.
+
+**Notas**
+- Durante la prueba, la limpieza canceló una reserva tuya pendiente sin pagar (23-nov 09:00, creada a las 00:43), que es el comportamiento esperado.
+- El cambio de rol se aplica al instante en el backend (lee `profiles` en cada petición); en el navegador del usuario afectado, al recargar.
+
+## Parte 8 — Automatización: Edge Function + pg_cron (21-nov-2026)
+
+**Hecho**
+- `supabase/functions/send-reminders/index.ts` (Deno + TypeScript), **desplegada**:
+  - Busca reservas `pagada` (sin bloqueos) de **mañana en hora de Lima** con `recordatorio_enviado = false`; obtiene el email del jugador (`auth.admin.getUserById`) y envía con Resend un correo HTML con botón "Cómo llegar" (Google Maps con lat/lng del complejo). Marca `recordatorio_enviado` solo si se envió y registra cada intento en `notificaciones_log` (`enviado` / `error` / `omitido`).
+  - `?dry_run=true`: devuelve la lista de lo que enviaría, sin enviar, sin marcar y sin registrar.
+  - Protegida con `Authorization: Bearer <CRON_SECRET>` (comparación en tiempo constante); se despliega con `verify_jwt = false` (en `supabase/config.toml`) porque no se llama con un JWT de usuario.
+  - Los correos `@canchaya.demo` no tienen buzón: se registran como `omitido` sin llamar a Resend. Pausa de 600 ms entre envíos (límite del plan gratis de Resend).
+- Secrets de la función cargados con `supabase secrets set` desde `backend/.env`: `RESEND_API_KEY`, `EMAIL_FROM`, `CRON_SECRET` (`SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` los pone Supabase).
+- **Supabase Vault**: `canchaya_project_url` y `canchaya_cron_secret` (cargados con un SQL de una sola vez, fuera del repositorio).
+- Migración `20261122000400_cron_recordatorios.sql` (**aplicada**): activa `pg_cron` y `pg_net` y programa `canchaya-recordatorios` con `0 23 * * *` (23:00 UTC = **18:00 Lima**), que hace `net.http_post` a la función leyendo URL y secreto de Vault.
+- `supabase/pendientes/20261122000500_cron_limpieza_pendientes.sql` (**NO aplicada**): programa `POST /tareas/limpiar-pendientes` cada 15 min con `X-Cron-Secret`. Tiene el placeholder `<URL_DE_RENDER>` y una guarda que aborta si no se reemplazó. Está fuera de `migrations/` para que un `supabase db push` no la aplique antes de tiempo.
+- Panel admin → Actividad: botones **"Simular (dry run)"** y **"Ejecutar recordatorios ahora"** (backend `POST /admin/recordatorios`, que llama a la función con el secreto; el navegador nunca lo ve).
+- Pruebas (todas OK): sin header → 401; secreto incorrecto → 401; `dry_run` → 200, fecha 2026-11-22, 21 reservas encontradas, 0 enviados, nada en `notificaciones_log`; botón del admin vía backend → 200; **llamada desde la base** con la misma consulta del cron (Vault + pg_net) → `net._http_response` 200. No se hizo una ejecución real (solo `dry_run`, como se pidió).
+
+**Comandos exactos**
+```bash
+# Desplegar (o redesplegar) la función
+supabase functions deploy send-reminders --no-verify-jwt
+
+# Secrets (los valores salen de backend/.env; no se escriben a mano en la terminal)
+supabase secrets set RESEND_API_KEY=re_... EMAIL_FROM="CanchaYa <onboarding@resend.dev>" CRON_SECRET=...
+supabase secrets list
+
+# Invocar a mano (demo): simulación y ejecución real
+export CRON_SECRET=$(grep '^CRON_SECRET=' backend/.env | cut -d= -f2-)
+curl -s -X POST "https://tvefiatclvdseztwopyr.supabase.co/functions/v1/send-reminders?dry_run=true" -H "Authorization: Bearer $CRON_SECRET"
+curl -s -X POST "https://tvefiatclvdseztwopyr.supabase.co/functions/v1/send-reminders" -H "Authorization: Bearer $CRON_SECRET"
+
+# Ver el cron y sus últimas ejecuciones
+supabase db query --remote --read-only "select jobname, schedule, active from cron.job"
+supabase db query --remote --read-only "select jobid, status, return_message, start_time from cron.job_run_details order by start_time desc limit 5"
+
+# Limpieza de pendientes a mano (mientras no esté el cron de 15 min)
+curl -s -X POST http://localhost:8000/tareas/limpiar-pendientes -H "X-Cron-Secret: $CRON_SECRET"
+curl -s -X POST https://<URL_DE_RENDER>/tareas/limpiar-pendientes -H "X-Cron-Secret: $CRON_SECRET"   # en producción
+```
+
+**Cómo probar en la demo**
+1. Panel admin → Actividad → "Simular (dry run)": lista las reservas pagadas de mañana y a quién se enviaría.
+2. Para recibir un recordatorio real: con `echipanar@ulasalle.edu.pe` reserva y paga (tarjeta 4242) una cancha para **mañana**; luego "Ejecutar recordatorios ahora" → llega el correo y aparece `enviado` en "Últimas notificaciones".
+
+**Notas**
+- Hoy (21-nov) a las 18:00 Lima el cron ya se ejecutará de verdad: las reservas demo de mañana son de `jugador@canchaya.demo`, así que se registrarán como `omitido` (sin enviar).
+
+## Parte 9 — Despliegue, CI/CD y monitoreo: archivos (21-nov-2026)
+
+**Hecho** (solo archivos; **no se desplegó nada**)
+- `frontend/vercel.json`: framework Vite, build `npm run build`, salida `dist`, **rewrite de SPA** a `index.html` (así `/canchas/123` no da 404 al recargar), cabeceras de seguridad (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`) y caché larga para `/assets/*`.
+- `render.yaml` (Blueprint): Web Service **Docker** `canchaya-api`, plan free, región virginia, `rootDir: backend`, `dockerfilePath: ./backend/Dockerfile` (Render los toma relativos a la raíz del repo), `healthCheckPath: /health`, autodeploy, variables no secretas con valor y las secretas con `sync: false`.
+- `.github/workflows/ci.yml`: en push/PR a `main` → **frontend** (Node 22, `npm ci`, lint, build con variables de relleno), **backend** (Python 3.12, `pytest`), **docker** (build de la imagen y prueba de que arranca y responde `/health`). Badge en el README.
+- Backend: `GET /health/servicios` → qué integraciones están configuradas (`supabase` se prueba de verdad; Stripe, webhook, Resend y cron solo sí/no, nunca el valor). Prueba nueva → **40 pruebas**.
+- Frontend: página pública **`/estado`** (enlace en el pie de página): semáforo de Backend (Render), Base de datos, Auth y la integración del backend, con latencia en ms; verde / amarillo (> 1,5 s, p. ej. Render despertando) / rojo; se refresca cada 30 s.
+- `docs/PENDIENTES_EVELYN.md`: checklist paso a paso para Render, Vercel, Supabase Auth, Stripe webhook y UptimeRobot, y qué pedirme después.
+
+**Cómo probar**
+1. Local: http://localhost:5173/estado con el backend levantado → 4 en verde (en local sale "sin configurar: stripe_webhook", es normal).
+2. CI simulado: `pytest` en una copia del backend **sin `.env`** → 40 pruebas en verde (así corre en GitHub Actions).
+3. Tras el deploy: seguir `docs/PENDIENTES_EVELYN.md`.
+
+**Notas**
+- Docker no está instalado en esta máquina: la imagen se construye y prueba en el job `docker` de GitHub Actions y en Render.
+
+## Parte 10 — Pulido, seguridad y documentación (21-nov-2026)
+
+**Hecho**
+- Seguridad del backend:
+  - **Rate limit** con slowapi (`app/limites.py`): 100 peticiones/min por IP y por ruta → 429 en español; `/health` exento. Dockerfile con `--proxy-headers` para contar por la IP real detrás de Render.
+  - **CORS más estricto**: solo `FRONTEND_URL`, métodos `GET/POST/PATCH/OPTIONS`, cabeceras `Authorization, Content-Type`, sin cookies.
+  - 3 pruebas nuevas (429, `/health` exento, CORS con origen ajeno) → **43 pruebas**.
+  - Revisión de secretos: ningún archivo versionable contiene llaves ni el `CRON_SECRET`; ningún `.env` en git.
+  - Listado real de políticas: **7 tablas con RLS, 24 políticas** (en `docs/seguridad.md`).
+- Frontend:
+  - **Carga diferida** (React.lazy) de mapa, gráficos y paneles: el paquete inicial bajó de 710 kB a 543 kB; Leaflet (161 kB) y Recharts (420 kB) se descargan solo al abrir esas páginas. `Suspense` en el layout y en el panel (el menú lateral no parpadea).
+  - **Título por página** en la pestaña del navegador (`Mis reservas · CanchaYa`, etc.).
+  - Descripción del sitio corregida (Arequipa). Los estados de carga y vacíos ya existían en todas las páginas nuevas (spinner + mensajes "Aún no…").
+- `scripts/prueba_carga.py`: prueba de carga sin instalar nada extra (httpx asíncrono). Resultados con el backend local: `/health` 2000 peticiones / 50 concurrentes → **312 req/s, p95 484 ms, 0 errores**; RPC `disponibilidad` 300 / 10 → 40 req/s, p95 485 ms, 0 errores; rate limit → 100 × 401 y 50 × 429.
+- Documentos en `docs/`: `arquitectura.md` (5 diagramas Mermaid), `modulos.md`, `seguridad.md`, `costos.md`, `pruebas.md`, `guion_demo.md`. README con badge de CI, estructura actualizada y tabla de documentos.
+
+**Cómo probar**
+1. `cd frontend && npm run lint && npm run build` → sin errores ni avisos.
+2. `cd backend && .venv/bin/pytest` → 43 pruebas.
+3. Con el backend corriendo: `backend/.venv/bin/python scripts/prueba_carga.py --api http://localhost:8000`.
+4. Abrir los `.md` de `docs/` en GitHub (renderiza los diagramas Mermaid).
+
+**Pendiente / notas**
+- No se hicieron "toasts" flotantes: la app usa avisos en línea (`Alerta`) de forma consistente en todas las acciones, que se leen mejor en la exposición. Tampoco skeletons: se mantuvo el spinner `Cargando`.
+- Los precios de `docs/costos.md` son referenciales: confirmarlos antes de entregar.
+- Los diagramas Mermaid no se pudieron renderizar aquí para revisarlos: revisarlos en GitHub.

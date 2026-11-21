@@ -25,6 +25,28 @@ export async function api<T = unknown>(ruta: string, opciones: RequestInit = {})
   return cuerpo as T
 }
 
+/**
+ * Descarga un archivo del backend (CSV/PDF) enviando el token.
+ * Un <a href> normal no puede mandar el header Authorization, por eso se
+ * pide con fetch, se arma un Blob y se "hace clic" en un enlace temporal.
+ */
+export async function descargar(ruta: string, nombreArchivo: string) {
+  const { data } = await supabase.auth.getSession()
+  const respuesta = await fetch(`${API_URL}${ruta}`, {
+    headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}` },
+  })
+  if (!respuesta.ok) {
+    const cuerpo = await respuesta.json().catch(() => ({}))
+    throw new Error((cuerpo as { detail?: string }).detail ?? `Error ${respuesta.status}`)
+  }
+  const url = URL.createObjectURL(await respuesta.blob())
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = nombreArchivo
+  enlace.click()
+  URL.revokeObjectURL(url)
+}
+
 /** Traduce los mensajes de error más comunes de Supabase Auth al español. */
 export function traducirError(mensaje: string): string {
   const m = mensaje.toLowerCase()

@@ -1,5 +1,7 @@
 # ⚽ CanchaYa
 
+[![CI](https://github.com/emcr30/final-cloud/actions/workflows/ci.yml/badge.svg)](https://github.com/emcr30/final-cloud/actions/workflows/ci.yml)
+
 Plataforma **SaaS multi-tenant** para reservar canchas de fútbol en Arequipa. Varios complejos deportivos (tenants) publican sus canchas en la misma plataforma. Los jugadores buscan en un mapa, reservan por horas y pagan en línea. Cada complejo solo ve y administra sus propios datos.
 
 > Trabajo final del curso **Cloud Computing** (Ingeniería de Software).
@@ -73,18 +75,43 @@ docker run --env-file .env -p 8000:8000 canchaya-api
 
 ```
 .
-├── frontend/          # SPA React (Vercel)
-├── backend/           # API FastAPI (Render, Docker)
+├── frontend/                # SPA React (Vercel) · vercel.json
+│   └── src/pages/           # canchas/, jugador/, propietario/, admin/, auth/, pago/, Estado.tsx
+├── backend/                 # API FastAPI (Render, Docker)
 │   ├── app/
-│   │   ├── main.py    # app, CORS, routers
-│   │   ├── config.py  # variables de entorno (pydantic-settings)
-│   │   ├── deps.py    # validación del token Supabase y rol
-│   │   └── routers/   # endpoints por módulo
-│   └── tests/
+│   │   ├── main.py          # app, CORS, rate limit, routers
+│   │   ├── config.py        # variables de entorno (pydantic-settings)
+│   │   ├── deps.py          # validación del token Supabase, rol y MFA (AAL2)
+│   │   ├── limites.py       # rate limit (slowapi)
+│   │   ├── routers/         # health, me, pagos, tareas, reportes, admin
+│   │   └── servicios/       # Stripe, Resend, PDF
+│   └── tests/               # pytest (43 pruebas)
 ├── supabase/
-│   ├── migrations/    # SQL: tablas, RLS, vistas
-│   └── functions/     # Edge Functions (Deno)
-└── docs/              # AVANCE.md y material del informe
+│   ├── migrations/          # SQL: tablas, RLS, vistas, métricas, cron
+│   ├── pendientes/          # migración de limpieza (se aplica tras el deploy)
+│   ├── tests/               # prueba de aislamiento multi-tenant
+│   ├── functions/send-reminders/  # Edge Function (Deno)
+│   └── seed.sql             # complejos demo en Arequipa
+├── scripts/                 # usuarios demo, prueba de carga
+├── render.yaml              # Blueprint de Render
+├── .github/workflows/ci.yml # CI: lint, build, pytest, Docker
+└── docs/                    # documentación del informe
 ```
 
-Avance detallado por partes: [docs/AVANCE.md](docs/AVANCE.md).
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [docs/arquitectura.md](docs/arquitectura.md) | Diagramas: arquitectura cloud, ER, reserva y pago, login con MFA, CI/CD |
+| [docs/modulos.md](docs/modulos.md) | Módulos, descripción y nivel de acceso por rol; endpoints |
+| [docs/seguridad.md](docs/seguridad.md) | Autenticación, MFA, RLS (24 políticas), cifrado, secretos, backups y recuperación |
+| [docs/costos.md](docs/costos.md) | Costo actual (S/ 0) y estimación al crecer (USD y PEN) |
+| [docs/pruebas.md](docs/pruebas.md) | Pruebas unitarias, aislamiento multi-tenant, funcionales y de carga |
+| [docs/guion_demo.md](docs/guion_demo.md) | Guion de la demo de 15 min con credenciales |
+| [docs/AVANCE.md](docs/AVANCE.md) | Avance detallado por partes y cómo probar cada una |
+| [docs/PENDIENTES_EVELYN.md](docs/PENDIENTES_EVELYN.md) | Checklist de despliegue (Vercel, Render, Supabase, Stripe, UptimeRobot) |
+
+## Usuarios demo
+
+Contraseña de todos: `Demo1234!` — `admin@canchaya.demo`, `propietario1@canchaya.demo`, `propietario2@canchaya.demo`, `jugador@canchaya.demo`.
+Se crean con `backend/.venv/bin/python scripts/crear_usuarios_demo.py`. Tarjeta de prueba de Stripe: `4242 4242 4242 4242`.

@@ -87,6 +87,9 @@ class Settings(BaseSettings):
     # Secreto compartido para tareas programadas (pg_cron → backend)
     cron_secret: str = ""
 
+    # Minutos que una reserva puede quedar "pendiente_pago" antes de liberarse
+    minutos_expiracion_pendiente: int = 15
+
     # Zona horaria del negocio
     timezone: str = "America/Lima"
 

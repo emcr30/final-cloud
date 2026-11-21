@@ -427,3 +427,9 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# Edge Function de recordatorios (Parte 8). verify_jwt = false porque NO se llama
+# con un JWT de Supabase: la protege su propio secreto (Authorization: Bearer <CRON_SECRET>),
+# que comparten pg_cron (desde Vault) y el backend (botón del panel admin).
+[functions.send-reminders]
+verify_jwt = false
