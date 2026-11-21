@@ -1,24 +1,100 @@
 @import "tailwindcss";
 
 /*
- * Paleta de CanchaYa: verde césped + blanco + gris oscuro.
- * Se usan como clases de Tailwind: bg-cesped-600, text-cesped-700, etc.
+ * Sistema visual de CanchaYa.
+ * - Tipografía: Instrument Sans (texto y títulos) + DM Mono (números, horas, etiquetas).
+ * - Color: tinta casi negra sobre blanco, verde bosque para acciones y un verde menta
+ *   (como el césped sintético recién pintado) para destacar.
+ * - Los grises de Tailwind se reemplazan por grises neutros (sin tinte azul).
+ * Se usan como clases de Tailwind: bg-cesped-600, text-gray-900, font-mono, etc.
  */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
-  --color-cesped-50: #f0fdf4;
-  --color-cesped-100: #dcfce7;
-  --color-cesped-200: #bbf7d0;
-  --color-cesped-300: #86efac;
-  --color-cesped-400: #4ade80;
-  --color-cesped-500: #22c55e;
-  --color-cesped-600: #16a34a;
-  --color-cesped-700: #15803d;
-  --color-cesped-800: #166534;
-  --color-cesped-900: #14532d;
+  /* Verde: menta (200) para acentos, bosque (600-900) para botones y texto */
+  --color-cesped-50: #f1fbf5;
+  --color-cesped-100: #dcf6e7;
+  --color-cesped-200: #a1ffcb;
+  --color-cesped-300: #74e8a8;
+  --color-cesped-400: #3fcb83;
+  --color-cesped-500: #23a464;
+  --color-cesped-600: #1d6b3b;
+  --color-cesped-700: #175a31;
+  --color-cesped-800: #124727;
+  --color-cesped-900: #0e3520;
+
+  /* Grises neutros (la tinta principal es #232323) */
+  --color-gray-50: #f7f7f6;
+  --color-gray-100: #f0f0ef;
+  --color-gray-200: #e4e4e2;
+  --color-gray-300: #d0d0cd;
+  --color-gray-400: #a3a3a0;
+  --color-gray-500: #737371;
+  --color-gray-600: #5a5a58;
+  --color-gray-700: #424241;
+  --color-gray-800: #2e2e2d;
+  --color-gray-900: #232323;
+  --color-gray-950: #161616;
+
+  /* Animación de entrada del hero */
+  --animate-entrar: entrar 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  @keyframes entrar {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: none; }
+  }
 }
 
-body {
-  @apply bg-white text-gray-800 antialiased;
+@layer base {
+  body {
+    @apply bg-white text-gray-800 antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+
+  /* Anillo de foco visible y consistente para teclado */
+  :focus-visible {
+    outline: 2px solid var(--color-cesped-600);
+    outline-offset: 2px;
+  }
+
+  /* Botones y enlaces responden al puntero: transición suave y "presión" al hacer clic */
+  a, button {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  button:not(:disabled):active,
+  a.boton:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Tarjeta enlazada: sube 2px al pasar el mouse; la foto dentro hace un zoom leve */
+.tarjeta-link { transition: transform 200ms, box-shadow 200ms, border-color 200ms; }
+.tarjeta-link:hover { transform: translateY(-2px); }
+.tarjeta-link .foto-zoom { transition: transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+.tarjeta-link:hover .foto-zoom { transform: scale(1.03); }
+
+/* Subrayado que se dibuja al pasar el mouse */
+.subrayado {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 250ms;
+}
+.subrayado:hover { background-size: 100% 1px; }
+
+/* Leaflet: popups con la tipografía del sitio */
+.leaflet-container { font-family: var(--font-sans); }
+
+/* Movimiento reducido: todo queda quieto y visible */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

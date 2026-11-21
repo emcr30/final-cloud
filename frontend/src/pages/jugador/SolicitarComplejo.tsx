@@ -27,7 +27,7 @@ export default function SolicitarComplejo() {
 
   return (
     <>
-      <h1 className="mb-1 flex items-center gap-2 text-2xl font-bold text-gray-900"><Building2 /> Registrar mi complejo</h1>
+      <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-gray-900"><Building2 /> Registrar mi complejo</h1>
       <p className="mb-4 text-gray-600">
         ¿Tienes un complejo deportivo? Regístralo y un administrador lo revisará. Al aprobarlo tu cuenta pasará a
         <b> propietario</b>: podrás gestionar canchas, precios, agenda y ver tus métricas (te pediremos activar la verificación en dos pasos).
@@ -38,7 +38,7 @@ export default function SolicitarComplejo() {
           <h2 className="mb-2 font-semibold text-gray-900">Mis solicitudes</h2>
           <ul className="space-y-2">
             {solicitudes.map((c) => (
-              <li key={c.id} className="rounded-xl border border-gray-200 p-3">
+              <li key={c.id} className="rounded-2xl border border-gray-200 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold text-gray-900">{c.nombre}</p>
                   <BadgeComplejo estado={c.estado} />
@@ -54,7 +54,7 @@ export default function SolicitarComplejo() {
         </section>
       )}
 
-      <section className="rounded-xl border border-gray-200 p-4">
+      <section className="rounded-2xl border border-gray-200 p-4">
         <h2 className="mb-3 font-semibold text-gray-900">{solicitudes.length ? 'Registrar otro complejo' : 'Datos del complejo'}</h2>
         <FormComplejo key={recarga} permitirFoto={false} onGuardado={() => setRecarga((n) => n + 1)} />
       </section>

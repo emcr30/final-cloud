@@ -43,8 +43,8 @@ export default function AdminConfiguracion() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Configuración</h1>
-      <form onSubmit={guardar} className="max-w-md space-y-4 rounded-xl border border-gray-200 p-4">
+      <h1 className="mb-4 text-3xl font-semibold text-gray-900">Configuración</h1>
+      <form onSubmit={guardar} className="max-w-md space-y-4 rounded-2xl border border-gray-200 p-4">
         {mensaje && <Alerta tipo={mensaje.tipo}>{mensaje.texto}</Alerta>}
         <div>
           <Campo label="Comisión de la plataforma (%)" type="number" min={0} max={50} step="0.5" required

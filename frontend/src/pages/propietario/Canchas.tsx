@@ -47,7 +47,7 @@ function FilaForm({ inicial, onGuardar, onCancelar }: {
         <input type="checkbox" checked={d.activa} onChange={(e) => setD({ ...d, activa: e.target.checked })} /> Activa
       </label>
       <div className="flex gap-1">
-        <button type="submit" disabled={guardando} className="inline-flex items-center gap-1 rounded-lg bg-cesped-600 px-3 py-2 text-sm font-semibold text-white hover:bg-cesped-700 disabled:opacity-60">
+        <button type="submit" disabled={guardando} className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-cesped-600 disabled:opacity-60">
           <Check size={16} /> {onCancelar ? 'Guardar' : 'Agregar'}
         </button>
         {onCancelar && (

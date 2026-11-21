@@ -22,7 +22,19 @@ USUARIOS = [
     ("admin@canchaya.demo", "Ana Admin", "999000001", "admin"),
     ("propietario1@canchaya.demo", "Pedro Propietario", "999000002", "propietario"),
     ("propietario2@canchaya.demo", "Paula Propietaria", "999000003", "propietario"),
-    ("jugador@canchaya.demo", "Juan Jugador", "999000004", "jugador"),
+    ("jugador@canchaya.demo", "Katniss Everdeen", "999000004", "jugador"),
+    # Más jugadores demo (personajes de Los Juegos del Hambre, sin buzón real):
+    # el seed reparte entre ellos las reservas de prueba para que la agenda
+    # y los reportes muestren nombres variados.
+    ("peeta@canchaya.demo", "Peeta Mellark", "999000010", "jugador"),
+    ("gale@canchaya.demo", "Gale Hawthorne", "999000011", "jugador"),
+    ("prim@canchaya.demo", "Primrose Everdeen", "999000012", "jugador"),
+    ("haymitch@canchaya.demo", "Haymitch Abernathy", "999000013", "jugador"),
+    ("effie@canchaya.demo", "Effie Trinket", "999000014", "jugador"),
+    ("finnick@canchaya.demo", "Finnick Odair", "999000015", "jugador"),
+    ("johanna@canchaya.demo", "Johanna Mason", "999000016", "jugador"),
+    ("rue@canchaya.demo", "Rue", "999000017", "jugador"),
+    ("beetee@canchaya.demo", "Beetee Latier", "999000018", "jugador"),
     # Jugador de la demo en vivo: correo real para recibir los correos de Resend
     # (sin dominio propio, Resend solo entrega al correo dueño de la cuenta).
     ("echipanar@ulasalle.edu.pe", "Evelyn Chipana", "999000005", "jugador"),

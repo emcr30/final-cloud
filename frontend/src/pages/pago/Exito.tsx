@@ -89,7 +89,7 @@ export default function PagoExito() {
           )}
 
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link to="/jugador/reservas" className="flex-1 rounded-lg bg-cesped-600 px-4 py-2.5 text-center font-semibold text-white hover:bg-cesped-700">Mis reservas</Link>
+            <Link to="/jugador/reservas" className="flex-1 rounded-full bg-gray-900 px-4 py-2.5 text-center font-semibold text-white hover:bg-cesped-600">Mis reservas</Link>
             {comprobante.lat != null && (
               <a href={`https://www.google.com/maps?q=${comprobante.lat},${comprobante.lng}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-4 py-2.5 font-medium hover:bg-gray-50">
                 <MapPin size={16} /> Cómo llegar

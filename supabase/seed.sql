@@ -54,7 +54,9 @@ on conflict (id) do nothing;
 -- seed_asociar_demo(): se llama cuando ya existen los usuarios demo.
 --  * propietario1@canchaya.demo → Yanahuara, Cayma, Sachaca
 --  * propietario2@canchaya.demo → Bustamante y Rivero, Cerro Colorado
---  * jugador@canchaya.demo      → reservas de las últimas 4 semanas + próximos días
+--  * jugador@canchaya.demo y los demás jugadores demo (peeta@, gale@, ...)
+--                                → reservas de las últimas 4 semanas + próximos días,
+--                                  repartidas al azar entre ellos
 -- Solo la service role puede ejecutarla.
 -- ---------------------------------------------------------------------
 create or replace function public.seed_asociar_demo()
@@ -67,6 +69,7 @@ declare
   v_prop1   uuid;
   v_prop2   uuid;
   v_jugador uuid;
+  v_jugadores uuid[];  -- todos los jugadores demo (@canchaya.demo, rol jugador, sin QA)
   v_hoy     date := (now() at time zone 'America/Lima')::date;  -- Arequipa usa la misma zona horaria
   v_n       int;
 begin
@@ -78,6 +81,11 @@ begin
     return 'Usuarios demo aún no creados: ejecuta scripts/crear_usuarios_demo.py';
   end if;
 
+  select array_agg(p.id order by u.email) into v_jugadores
+  from public.profiles p
+  join auth.users u on u.id = p.id
+  where p.rol = 'jugador' and u.email like '%@canchaya.demo' and u.email not like 'qa.%';
+
   -- Asignar complejos (tenants) a sus dueños
   update public.complejos set propietario_id = v_prop1
   where id in ('c0000000-0000-4000-8000-000000000001',
@@ -88,7 +96,7 @@ begin
                'c0000000-0000-4000-8000-000000000005');
 
   -- Reservas: solo la primera vez
-  if exists (select 1 from public.reservas where jugador_id = v_jugador) then
+  if exists (select 1 from public.reservas where jugador_id = any (v_jugadores)) then
     return 'Complejos asignados; las reservas demo ya existían';
   end if;
 
@@ -98,7 +106,9 @@ begin
   -- Más probabilidad de 18:00 a 22:00 y en fin de semana (horas pico).
   insert into public.reservas (cancha_id, jugador_id, fecha, hora_inicio, hora_fin, estado, recordatorio_enviado)
   select
-    c.id, v_jugador, d::date, make_time(h, 0, 0), make_time(h + 1, 0, 0),
+    c.id,
+    v_jugadores[1 + floor(random() * array_length(v_jugadores, 1))::int],  -- un jugador demo al azar
+    d::date, make_time(h, 0, 0), make_time(h + 1, 0, 0),
     case
       when d::date >= v_hoy then 'pagada'::public.estado_reserva
       when random() < 0.08  then 'cancelada'::public.estado_reserva
@@ -129,10 +139,10 @@ begin
   select r.id, r.monto, 'pen', 'cs_test_seed_' || r.id, 'pi_seed_' || left(r.id::text, 8), 'pagado',
          (r.fecha - 1) + time '12:00'
   from public.reservas r
-  where r.jugador_id = v_jugador and r.estado in ('pagada', 'completada')
+  where r.jugador_id = any (v_jugadores) and r.estado in ('pagada', 'completada')
   on conflict (stripe_session_id) do nothing;
 
-  select count(*) into v_n from public.reservas where jugador_id = v_jugador;
+  select count(*) into v_n from public.reservas where jugador_id = any (v_jugadores);
   return format('Complejos asignados y %s reservas demo creadas', v_n);
 end;
 $$;

@@ -70,10 +70,10 @@ export default function AdminActividad() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Actividad</h1>
+      <h1 className="mb-4 text-3xl font-semibold text-gray-900">Actividad</h1>
 
       {/* Recordatorios (Parte 8): Edge Function send-reminders */}
-      <section className="mb-6 rounded-xl border border-gray-200 p-4">
+      <section className="mb-6 rounded-2xl border border-gray-200 p-4">
         <h2 className="flex items-center gap-2 font-semibold text-gray-900"><BellRing size={18} /> Recordatorios de mañana</h2>
         <p className="mt-1 text-sm text-gray-600">
           Todos los días a las 18:00 (hora de Lima) pg_cron ejecuta la Edge Function <code>send-reminders</code>.
@@ -83,7 +83,7 @@ export default function AdminActividad() {
           <button onClick={() => recordatorios(true)} disabled={ejecutando} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60">
             <Play size={16} /> Simular (dry run)
           </button>
-          <button onClick={() => recordatorios(false)} disabled={ejecutando} className="inline-flex items-center gap-2 rounded-lg bg-cesped-600 px-3 py-2 text-sm font-semibold text-white hover:bg-cesped-700 disabled:opacity-60">
+          <button onClick={() => recordatorios(false)} disabled={ejecutando} className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-cesped-600 disabled:opacity-60">
             <Mail size={16} /> Ejecutar recordatorios ahora
           </button>
         </div>
@@ -110,7 +110,7 @@ export default function AdminActividad() {
         <section>
           <h2 className="mb-2 flex items-center gap-2 font-semibold text-gray-900"><Mail size={18} /> Últimas notificaciones</h2>
           {!notis ? <Cargando /> : notis.length === 0 ? <p className="text-sm text-gray-500">Aún no se enviaron correos.</p> : (
-            <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200">
+            <ul className="divide-y divide-gray-100 rounded-2xl border border-gray-200">
               {notis.map((n) => (
                 <li key={n.id} className="p-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -127,7 +127,7 @@ export default function AdminActividad() {
         <section>
           <h2 className="mb-2 flex items-center gap-2 font-semibold text-gray-900"><CreditCard size={18} /> Últimos pagos</h2>
           {!pagos ? <Cargando /> : pagos.length === 0 ? <p className="text-sm text-gray-500">Aún no hay pagos.</p> : (
-            <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200">
+            <ul className="divide-y divide-gray-100 rounded-2xl border border-gray-200">
               {pagos.map((p) => (
                 <li key={p.id} className="p-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">

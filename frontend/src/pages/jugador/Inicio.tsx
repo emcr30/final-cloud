@@ -12,9 +12,9 @@ interface Resumen { total_gastado: number; reservas_mes: number; reservas_total:
 
 function Tarjeta({ icono: Icono, titulo, valor }: { icono: LucideIcon; titulo: string; valor: string }) {
   return (
-    <div className="rounded-xl border border-gray-200 p-4">
+    <div className="rounded-2xl border border-gray-200 p-4">
       <p className="flex items-center gap-2 text-sm text-gray-500"><Icono size={16} /> {titulo}</p>
-      <p className="mt-1 text-2xl font-bold text-gray-900">{valor}</p>
+      <p className="mt-1 text-3xl font-semibold text-gray-900">{valor}</p>
     </div>
   )
 }
@@ -54,7 +54,7 @@ export default function JugadorInicio() {
     <>
       <div className="mb-6">
         <p className="text-sm text-gray-500">Hola, {perfil?.nombre.split(' ')[0]} 👋</p>
-        <h1 className="text-2xl font-bold text-gray-900">Mi panel</h1>
+        <h1 className="text-3xl font-semibold text-gray-900">Mi panel</h1>
       </div>
 
       {/* Próxima reserva */}
@@ -79,7 +79,7 @@ export default function JugadorInicio() {
         ) : (
           <div className="mt-2">
             <p className="text-gray-700">No tienes partidos programados.</p>
-            <Link to="/canchas" className="mt-3 inline-flex items-center gap-2 rounded-lg bg-cesped-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cesped-700">
+            <Link to="/canchas" className="mt-3 inline-flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-cesped-600">
               <Search size={16} /> Buscar canchas
             </Link>
           </div>

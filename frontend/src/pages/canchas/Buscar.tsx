@@ -81,39 +81,40 @@ export default function Buscar() {
     )
   }
 
-  const claseSelect = 'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-cesped-600'
+  const claseSelect = 'h-11 rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none hover:border-gray-400 focus:border-gray-900 focus:ring-4 focus:ring-cesped-200/60'
   const claseToggle = (activo: boolean) =>
-    `inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium ${activo ? 'bg-cesped-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`
+    `inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium ${activo ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'}`
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900">Buscar canchas</h1>
-      <p className="mt-1 text-gray-600">Encuentra un complejo, elige tu horario y reserva en línea.</p>
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <p className="font-mono text-xs uppercase tracking-[0.16em] text-cesped-600">Arequipa</p>
+      <h1 className="mt-2 text-4xl font-semibold text-gray-900 sm:text-5xl">Buscar canchas</h1>
+      <p className="mt-2 text-lg text-gray-600">Encuentra un complejo, elige tu horario y reserva en línea.</p>
 
       {/* Filtros */}
-      <div className="mt-6 flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+      <div className="mt-8 flex flex-wrap items-end gap-3 rounded-2xl bg-gray-50 p-4 sm:p-5">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
           Distrito
           <select className={claseSelect} value={distrito} onChange={(e) => setDistrito(e.target.value)}>
             <option value="">Todos</option>
             {distritos.map((d) => <option key={d}>{d}</option>)}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
           Tipo de cancha
           <select className={claseSelect} value={tipo} onChange={(e) => setTipo(e.target.value as TipoCancha | '')}>
             <option value="">Todos</option>
             {Object.entries(NOMBRE_TIPO).map(([valor, texto]) => <option key={valor} value={valor}>{texto}</option>)}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-gray-600">
           Precio máx. por hora (S/)
           <input type="number" min={0} step={10} placeholder="Sin límite" className={`${claseSelect} w-36`} value={precioMax} onChange={(e) => setPrecioMax(e.target.value)} />
         </label>
-        <button onClick={cercaDeMi} disabled={ubicando} className="inline-flex items-center gap-1.5 rounded-lg border border-cesped-600 bg-white px-3 py-2 text-sm font-semibold text-cesped-700 hover:bg-cesped-50 disabled:opacity-60">
+        <button onClick={cercaDeMi} disabled={ubicando} className="inline-flex h-11 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:border-gray-900 disabled:opacity-60">
           <LocateFixed size={16} /> {ubicando ? 'Ubicando…' : miUbicacion ? 'Ordenado por cercanía' : 'Cerca de mí'}
         </button>
-        <div className="ml-auto flex overflow-hidden rounded-lg border border-gray-300">
+        <div className="ml-auto flex rounded-full border border-gray-200 bg-white p-1">
           <button className={claseToggle(vista === 'lista')} onClick={() => setVista('lista')}><List size={16} /> Lista</button>
           <button className={claseToggle(vista === 'mapa')} onClick={() => setVista('mapa')}><IconoMapa size={16} /> Mapa</button>
         </div>
@@ -125,8 +126,8 @@ export default function Buscar() {
         {cargando ? (
           <Cargando texto="Buscando complejos…" />
         ) : resultados.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center text-gray-500">
-            <Search className="mx-auto mb-2" />
+          <div className="rounded-2xl border border-dashed border-gray-300 px-6 py-16 text-center text-gray-600">
+            <Search className="mx-auto mb-3 text-gray-400" />
             No hay canchas con esos filtros. Prueba con otro distrito o un precio mayor.
           </div>
         ) : vista === 'mapa' ? (
@@ -137,24 +138,26 @@ export default function Buscar() {
             zoom={miUbicacion ? 14 : 12}
           />
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {resultados.map((c) => (
-              <Link key={c.id} to={`/canchas/${c.id}`} className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
-                <FotoComplejo url={c.foto_url} nombre={c.nombre} className="h-36" />
-                <div className="p-4">
-                  <h2 className="font-semibold text-gray-900 group-hover:text-cesped-700">{c.nombre}</h2>
+              <Link key={c.id} to={`/canchas/${c.id}`} className="tarjeta-link group block">
+                <FotoComplejo url={c.foto_url} nombre={c.nombre} className="aspect-[4/3] rounded-2xl" />
+                <div className="pt-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="text-lg font-semibold leading-snug text-gray-900">{c.nombre}</h2>
+                    <p className="shrink-0 text-right text-xs text-gray-500">
+                      desde<br /><span className="font-mono text-base font-medium text-gray-900">{soles(c.precioDesde!)}</span><span className="text-gray-500"> /h</span>
+                    </p>
+                  </div>
                   <p className="mt-0.5 flex items-center gap-1 text-sm text-gray-500">
                     <MapPin size={14} /> {c.distrito}
-                    {c.distancia != null && <span className="ml-1 font-medium text-blue-600">· {c.distancia.toFixed(1)} km</span>}
+                    {c.distancia != null && <span className="ml-1 font-mono font-medium text-cesped-600">· {c.distancia.toFixed(1)} km</span>}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1">
                     {[...new Set(c.canchasFiltradas.map((k) => k.tipo))].map((t) => (
-                      <span key={t} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{NOMBRE_TIPO[t]}</span>
+                      <span key={t} className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700">{NOMBRE_TIPO[t]}</span>
                     ))}
                   </div>
-                  <p className="mt-3 text-sm text-gray-600">
-                    Desde <span className="text-lg font-bold text-gray-900">{soles(c.precioDesde!)}</span> / hora
-                  </p>
                 </div>
               </Link>
             ))}

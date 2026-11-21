@@ -169,47 +169,47 @@ export default function Detalle() {
   const dias = Array.from({ length: DIAS_VISIBLES }, (_, i) => sumarDias(hoyLima(), i))
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <Link to="/canchas" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <Link to="/canchas" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900">
         <ArrowLeft size={16} /> Volver a la búsqueda
       </Link>
 
       <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_22rem]">
         {/* Columna principal */}
         <div className="min-w-0">
-          <FotoComplejo url={complejo.foto_url} nombre={complejo.nombre} className="h-48 rounded-xl sm:h-64" />
-          <h1 className="mt-5 text-3xl font-bold text-gray-900">{complejo.nombre}</h1>
+          <FotoComplejo url={complejo.foto_url} nombre={complejo.nombre} className="aspect-[16/9] rounded-2xl sm:aspect-[21/9]" />
+          <h1 className="mt-6 text-4xl font-semibold text-gray-900 sm:text-5xl">{complejo.nombre}</h1>
           <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
             <span className="inline-flex items-center gap-1"><MapPin size={15} /> {complejo.direccion}, {complejo.distrito}</span>
-            <span className="inline-flex items-center gap-1"><Clock size={15} /> {hhmm(complejo.hora_apertura)} – {hhmm(complejo.hora_cierre)}</span>
+            <span className="inline-flex items-center gap-1 font-mono"><Clock size={15} /> {hhmm(complejo.hora_apertura)} – {hhmm(complejo.hora_cierre)}</span>
           </p>
           {complejo.descripcion && <p className="mt-3 text-gray-700">{complejo.descripcion}</p>}
 
           {/* 1. Cancha */}
-          <h2 className="mt-8 font-semibold text-gray-900">1. Elige la cancha</h2>
+          <h2 className="mt-10 flex items-baseline gap-3 text-lg font-semibold text-gray-900"><span className="font-mono text-sm text-gray-500">01</span> Elige la cancha</h2>
           {complejo.canchas.length === 0 && <p className="mt-2 text-sm text-gray-500">Este complejo no tiene canchas disponibles.</p>}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {complejo.canchas.map((k) => (
               <button
                 key={k.id}
                 onClick={() => setCanchaId(k.id)}
-                className={`rounded-xl border p-4 text-left transition ${k.id === canchaId ? 'border-cesped-600 bg-cesped-50 ring-2 ring-cesped-200' : 'border-gray-200 hover:border-gray-300'}`}
+                className={`rounded-2xl border p-4 text-left ${k.id === canchaId ? 'border-gray-900 bg-cesped-50 ring-1 ring-gray-900' : 'border-gray-200 hover:border-gray-400'}`}
               >
                 <p className="font-semibold text-gray-900">{k.nombre}</p>
                 <p className="text-sm text-gray-600">{NOMBRE_TIPO[k.tipo]} · {NOMBRE_SUPERFICIE[k.superficie]}</p>
-                <p className="mt-1 font-bold text-cesped-700">{soles(k.precio_hora)} / hora</p>
+                <p className="mt-2 font-mono font-medium text-gray-900">{soles(k.precio_hora)} <span className="text-gray-500">/ hora</span></p>
               </button>
             ))}
           </div>
 
           {/* 2. Fecha */}
-          <h2 className="mt-8 font-semibold text-gray-900">2. Elige la fecha</h2>
+          <h2 className="mt-10 flex items-baseline gap-3 text-lg font-semibold text-gray-900"><span className="font-mono text-sm text-gray-500">02</span> Elige la fecha</h2>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
             {dias.map((d) => (
               <button
                 key={d}
                 onClick={() => setFecha(d)}
-                className={`shrink-0 rounded-lg border px-3 py-2 text-sm capitalize ${d === fecha ? 'border-cesped-600 bg-cesped-600 font-semibold text-white' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
+                className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm capitalize ${d === fecha ? 'border-gray-900 bg-gray-900 font-semibold text-white' : 'border-gray-200 text-gray-700 hover:border-gray-400'}`}
               >
                 {d === hoyLima() ? 'Hoy' : fechaCorta(d)}
               </button>
@@ -217,7 +217,7 @@ export default function Detalle() {
           </div>
 
           {/* 3. Horario */}
-          <h2 className="mt-8 font-semibold text-gray-900">3. Elige el horario <span className="font-normal text-gray-500">(1 a {MAX_HORAS} horas seguidas)</span></h2>
+          <h2 className="mt-10 flex flex-wrap items-baseline gap-x-3 text-lg font-semibold text-gray-900"><span className="font-mono text-sm text-gray-500">03</span> Elige el horario <span className="text-sm font-normal text-gray-500">(1 a {MAX_HORAS} horas seguidas)</span></h2>
           {cargandoFranjas ? (
             <Cargando texto="Consultando horarios…" />
           ) : franjas.length === 0 ? (
@@ -232,11 +232,11 @@ export default function Detalle() {
                       key={f.hora_inicio}
                       disabled={!f.disponible}
                       onClick={() => elegirHora(i)}
-                      className={`rounded-lg border px-2 py-2 text-sm font-medium transition ${
+                      className={`min-h-11 rounded-xl border px-2 py-2 font-mono text-sm font-medium ${
                         elegida
-                          ? 'border-cesped-600 bg-cesped-600 text-white'
+                          ? 'border-cesped-600 bg-cesped-200 text-gray-900 ring-1 ring-cesped-600'
                           : f.disponible
-                            ? 'border-gray-200 text-gray-800 hover:border-cesped-500 hover:bg-cesped-50'
+                            ? 'border-gray-200 text-gray-800 hover:border-gray-900'
                             : 'cursor-not-allowed border-gray-100 bg-gray-100 text-gray-400 line-through'
                       }`}
                     >
@@ -252,14 +252,14 @@ export default function Detalle() {
 
         {/* Resumen (columna derecha) */}
         <aside className="h-fit space-y-4 lg:sticky lg:top-24">
-          <div className="rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,.04),0_12px_32px_-12px_rgba(0,0,0,.12)]">
             <h2 className="flex items-center gap-2 font-semibold text-gray-900"><CalendarCheck size={18} /> Tu reserva</h2>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between gap-2"><dt className="text-gray-500">Cancha</dt><dd className="text-right font-medium">{cancha?.nombre ?? '—'}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-gray-500">Fecha</dt><dd className="text-right font-medium capitalize">{fechaLarga(fecha)}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-gray-500">Horario</dt><dd className="font-medium">{seleccion ? `${hhmm(seleccion.desde)} – ${hhmm(seleccion.hasta)}` : '—'}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-gray-500">Duración</dt><dd className="font-medium">{horas ? `${horas} hora${horas > 1 ? 's' : ''}` : '—'}</dd></div>
-              <div className="flex justify-between gap-2 border-t border-gray-200 pt-3 text-base"><dt className="font-semibold">Total</dt><dd className="font-bold text-cesped-700">{soles(total)}</dd></div>
+              <div className="flex justify-between gap-2 border-t border-gray-200 pt-3 text-base"><dt className="font-semibold">Total</dt><dd className="font-mono text-xl font-medium text-gray-900">{soles(total)}</dd></div>
             </dl>
             {error && <div className="mt-4"><Alerta>{error}</Alerta></div>}
             {aviso && (

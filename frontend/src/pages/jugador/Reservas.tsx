@@ -87,13 +87,13 @@ export default function MisReservas() {
   const lista = pestana === 'proximas' ? proximas : historial
 
   const clasePestana = (activa: boolean) =>
-    `rounded-lg px-4 py-2 text-sm font-semibold ${activa ? 'bg-cesped-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`
+    `min-h-11 rounded-full px-4 py-2 text-sm font-semibold ${activa ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`
 
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Mis reservas</h1>
-        <Link to="/canchas" className="rounded-lg bg-cesped-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cesped-700">Nueva reserva</Link>
+        <h1 className="text-3xl font-semibold text-gray-900">Mis reservas</h1>
+        <Link to="/canchas" className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-cesped-600">Nueva reserva</Link>
       </div>
 
       <div className="mb-4 flex gap-2">
@@ -111,7 +111,7 @@ export default function MisReservas() {
       ) : (
         <ul className="space-y-3">
           {lista.map((r) => (
-            <li key={r.id} className="flex flex-col gap-3 rounded-xl border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <li key={r.id} className="flex flex-col gap-3 rounded-2xl border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold capitalize text-gray-900">{fechaLarga(r.fecha)}</p>
@@ -131,7 +131,7 @@ export default function MisReservas() {
               </div>
               <div className="flex shrink-0 gap-2">
                 {r.estado === 'pendiente_pago' && esProxima(r) && (
-                  <button onClick={() => pagar(r)} disabled={ocupada === r.id} className="inline-flex items-center gap-1 rounded-lg bg-cesped-600 px-3 py-2 text-sm font-semibold text-white hover:bg-cesped-700 disabled:opacity-60">
+                  <button onClick={() => pagar(r)} disabled={ocupada === r.id} className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-cesped-600 disabled:opacity-60">
                     <CreditCard size={16} /> Pagar
                   </button>
                 )}

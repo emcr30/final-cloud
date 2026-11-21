@@ -31,8 +31,8 @@ export default function MisComplejos() {
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Mis complejos</h1>
-        <Link to="/propietario/complejos/nuevo" className="inline-flex items-center gap-2 rounded-lg bg-cesped-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cesped-700">
+        <h1 className="text-3xl font-semibold text-gray-900">Mis complejos</h1>
+        <Link to="/propietario/complejos/nuevo" className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-cesped-600">
           <Plus size={16} /> Nuevo complejo
         </Link>
       </div>
@@ -44,7 +44,7 @@ export default function MisComplejos() {
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
           {complejos.map((c) => (
-            <li key={c.id} className="overflow-hidden rounded-xl border border-gray-200">
+            <li key={c.id} className="overflow-hidden rounded-2xl border border-gray-200">
               <FotoComplejo url={c.foto_url} nombre={c.nombre} className="h-32" />
               <div className="p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -100,12 +100,12 @@ function EditorComplejo({ id }: { id: string }) {
         <ArrowLeft size={16} /> Mis complejos
       </Link>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">{nuevo ? 'Registrar complejo' : complejo!.nombre}</h1>
+        <h1 className="text-3xl font-semibold text-gray-900">{nuevo ? 'Registrar complejo' : complejo!.nombre}</h1>
         {complejo && <BadgeComplejo estado={complejo.estado} />}
       </div>
       {aviso && <div className="mb-4"><Alerta tipo="exito">{aviso}</Alerta></div>}
 
-      <section className="rounded-xl border border-gray-200 p-4">
+      <section className="rounded-2xl border border-gray-200 p-4">
         <h2 className="mb-3 font-semibold text-gray-900">Datos del complejo</h2>
         <FormComplejo
           key={complejo?.id ?? 'nuevo'}
@@ -122,7 +122,7 @@ function EditorComplejo({ id }: { id: string }) {
       </section>
 
       {complejo && (
-        <section className="mt-6 rounded-xl border border-gray-200 p-4">
+        <section className="mt-6 rounded-2xl border border-gray-200 p-4">
           <h2 className="mb-3 font-semibold text-gray-900">Canchas</h2>
           <GestionCanchas complejoId={complejo.id} />
         </section>

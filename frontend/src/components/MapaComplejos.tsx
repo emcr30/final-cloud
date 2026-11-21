@@ -37,7 +37,7 @@ export default function MapaComplejos({
   complejos, centro = CENTRO_MAPA, zoom = 12, miUbicacion, alto = 'h-[28rem]', conEnlace = true,
 }: Props) {
   return (
-    <div className={`${alto} overflow-hidden rounded-xl border border-gray-200`}>
+    <div className={`${alto} overflow-hidden rounded-2xl border border-gray-200`}>
       <MapContainer center={centro} zoom={zoom} scrollWheelZoom className="h-full w-full">
         <Recentrar centro={centro} zoom={zoom} />
         <TileLayer
@@ -58,7 +58,7 @@ export default function MapaComplejos({
                 <p className="text-xs text-gray-500">{c.distrito}</p>
                 {c.precioDesde != null && <p className="mt-1 text-sm">Desde <b>{soles(c.precioDesde)}</b> / hora</p>}
                 {conEnlace && (
-                  <Link to={`/canchas/${c.id}`} className="mt-2 inline-block rounded bg-cesped-600 px-2 py-1 text-xs font-semibold !text-white">
+                  <Link to={`/canchas/${c.id}`} className="mt-2 inline-block rounded-full bg-gray-900 px-3 py-1.5 text-xs font-semibold !text-white">
                     Ver canchas
                   </Link>
                 )}

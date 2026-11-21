@@ -54,11 +54,11 @@ export default function AdminComplejos() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Complejos</h1>
+      <h1 className="mb-4 text-3xl font-semibold text-gray-900">Complejos</h1>
       <div className="mb-4 flex flex-wrap gap-2">
         {PESTANAS.map((p) => (
           <button key={p} onClick={() => setPestana(p)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold ${pestana === p ? 'bg-cesped-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+            className={`min-h-11 rounded-full px-4 py-2 text-sm font-semibold ${pestana === p ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
             {p === 'todos' ? `Todos (${complejos.length})` : `${ESTADO_COMPLEJO[p].texto.split(' ')[0]}s (${cuenta(p)})`}
           </button>
         ))}
@@ -70,7 +70,7 @@ export default function AdminComplejos() {
       ) : (
         <ul className="space-y-3">
           {lista.map((c) => (
-            <li key={c.id} className="flex flex-col gap-3 rounded-xl border border-gray-200 p-3 sm:flex-row sm:items-center">
+            <li key={c.id} className="flex flex-col gap-3 rounded-2xl border border-gray-200 p-3 sm:flex-row sm:items-center">
               <FotoComplejo url={c.foto_url} nombre={c.nombre} className="h-20 rounded-lg sm:w-32 sm:shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -90,7 +90,7 @@ export default function AdminComplejos() {
                   </Link>
                 )}
                 {c.estado !== 'activo' && (
-                  <button disabled={ocupado === c.id} onClick={() => cambiarEstado(c, 'activo')} className={`${boton} bg-cesped-600 text-white hover:bg-cesped-700`}>
+                  <button disabled={ocupado === c.id} onClick={() => cambiarEstado(c, 'activo')} className={`${boton} bg-gray-900 text-white hover:bg-cesped-600`}>
                     {c.estado === 'pendiente' ? <><CheckCircle2 size={14} /> Aprobar</> : <><RotateCcw size={14} /> Reactivar</>}
                   </button>
                 )}

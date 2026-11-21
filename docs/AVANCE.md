@@ -316,3 +316,57 @@ curl -s -X POST https://<URL_DE_RENDER>/tareas/limpiar-pendientes -H "X-Cron-Sec
 - No se hicieron "toasts" flotantes: la app usa avisos en línea (`Alerta`) de forma consistente en todas las acciones, que se leen mejor en la exposición. Tampoco skeletons: se mantuvo el spinner `Cargando`.
 - Los precios de `docs/costos.md` son referenciales: confirmarlos antes de entregar.
 - Los diagramas Mermaid no se pudieron renderizar aquí para revisarlos: revisarlos en GitHub.
+
+---
+
+## Rediseño visual del frontend
+
+**Qué se hizo** (solo frontend; sin tocar base de datos, backend ni la lógica de las páginas)
+- **Sistema visual nuevo** en `frontend/src/index.css`: tipografía Instrument Sans + DM Mono (horas, precios y etiquetas), grises neutros, tinta `#232323`, verde bosque `#1d6b3b` para acciones y verde menta `#a1ffcb` como acento. Los nombres de clase (`cesped-*`, `gray-*`) no cambiaron, así que todas las páginas toman la paleta nueva.
+- **Fotos reales** de canchas en `frontend/public/img/` (optimizadas a JPG, de 1,9 MB a ~0,7 MB en total; a `cesped.jpg` se le recortó el logo de un club que aparecía en la foto original). Las originales siguen en `img/`.
+- **Portada** (`pages/Inicio.tsx`): foto nocturna a pantalla completa con la barra de navegación transparente encima, pasos numerados junto a una foto, una frase grande sobre fondo oscuro, sección para dueños con la vista aérea y un cierre con llamada a la acción.
+- **Barra de navegación y pie** rediseñados; menú móvil con botones de 44 px.
+- **Login, registro, recuperar contraseña y MFA**: formulario a la izquierda y una foto a la derecha (en escritorio).
+- **Buscar**: tarjetas con foto 4:3, precio "desde" en mono y efecto al pasar el mouse (la tarjeta sube 2 px y la foto hace un zoom leve). Los complejos sin foto usan una de las fotos de respaldo, siempre la misma para cada nombre (`FotoComplejo.tsx`).
+- **Detalle/reserva**: pasos 01-02-03, horas en mono, horario elegido en menta.
+- **Paneles**: menú lateral con avatar e ítem activo oscuro, KPIs con números en mono, gráficos con el verde nuevo. Botones en forma de píldora en toda la app.
+- Animación de entrada en la portada, "presión" al hacer clic en los botones y respeto a `prefers-reduced-motion`.
+
+**Cómo probar**
+1. `cd frontend && npm run lint && npm run build` → sin errores.
+2. `npm run dev` y revisar `/`, `/canchas`, el detalle de un complejo, `/login`, y un panel de cada rol. Revisar también a 390 px de ancho (móvil).
+
+---
+
+## Jugadores demo con nombres de Los Juegos del Hambre
+
+**Qué se hizo**
+- `jugador@canchaya.demo` ahora se llama **Katniss Everdeen** (antes "Juan Jugador"); misma contraseña.
+- 9 jugadores demo nuevos, sin buzón real (contraseña `Demo1234!`): `peeta@`, `gale@`, `prim@`, `haymitch@`, `effie@`, `finnick@`, `johanna@`, `rue@`, `beetee@` (todos `@canchaya.demo`).
+- Las 1741 reservas de prueba se repartieron al azar entre los 10 jugadores demo (≈150-195 cada uno). No se tocaron las reservas reales de `echipanar@ulasalle.edu.pe`, las de los usuarios QA ni los bloqueos de los propietarios.
+- `scripts/crear_usuarios_demo.py` y `seed_asociar_demo()` en `supabase/seed.sql` quedaron actualizados para que una instalación nueva ya reparta las reservas entre todos los jugadores demo.
+
+**Cómo probar**
+- Entrar como `propietario1@canchaya.demo` → Agenda: las reservas muestran nombres variados (Peeta Mellark, Rue, Effie Trinket…).
+
+---
+
+## Agenda con bloques de varias horas y datos demo hasta el 5-dic
+
+**Agenda (`frontend/src/pages/propietario/Agenda.tsx`)**
+- Una reserva de 2 o 3 horas se dibuja como **un solo bloque** que ocupa todas sus filas (`rowSpan`), con el nombre y el rango (`Maysilee · 18:00–20:00`). Ya no aparece "↳". Clic en el bloque → detalle de la reserva.
+
+**Datos demo (insertados directamente en Supabase, sin scripts)**
+- 14 jugadores con nombres de *Amanecer en la cosecha* (`@canchaya.demo`, contraseña `Demo1234!`): se reutilizaron `haymitch@`, `effie@`, `beetee@` y se crearon `maysilee@`, `lenore@`, `louella@`, `wyatt@`, `ampert@`, `wiress@`, `mags@`, `burdock@`, `asterid@`, `plutarch@`, `drusilla@`.
+- Se reemplazaron las reservas de prueba de jugadores demo desde el **7-nov** (hoy − 14 días) por reservas nuevas hasta el **5-dic**: 5-6 por semana en cada cancha activa (23-27 por cancha en total), 77 % de noche (18:00-22:00) y más en fin de semana, ~1 de cada 3 de 2 horas.
+- Pasadas = `completada` con pago; futuras = `pagada` con pago (IDs de Stripe ficticios `cs_test_demo_…`). 8 bloqueos internos (máximo uno por cancha).
+- **5-dic de 10:00 a 17:00 libre** en todas las canchas para reservar en vivo.
+- No se tocaron: reservas de `echipanar@ulasalle.edu.pe`, la reserva de `propietario1`, los bloqueos existentes, los usuarios QA ni el historial anterior al 7-nov.
+- Recordatorios: `send-reminders` ya registra como `omitido` (sin enviar) a todo destinatario `*.demo`.
+
+**Cifras esperadas en los dashboards (7-nov a 5-dic)**: propietario1 176 reservas / S/ 25 650; propietario2 124 / S/ 12 265; admin 300 / S/ 37 915. Horas pico 18:00-21:00.
+
+**Cómo probar**
+1. Entrar como `propietario1@canchaya.demo` (con código MFA) → Agenda → recorrer semanas hasta el 5-dic; las reservas de 2 h se ven como un bloque.
+2. Dashboard del propietario y del admin con rango 7-nov a 5-dic.
+3. Como jugador, abrir cualquier complejo el sábado 5-dic: de 10:00 a 17:00 todo libre.

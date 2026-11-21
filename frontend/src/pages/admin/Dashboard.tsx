@@ -75,10 +75,10 @@ export default function AdminDashboard() {
     <>
       <div className="mb-4">
         <p className="text-sm text-gray-500">Hola, {perfil?.nombre.split(' ')[0]} 👋</p>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard de la plataforma</h1>
+        <h1 className="text-3xl font-semibold text-gray-900">Dashboard de la plataforma</h1>
       </div>
 
-      <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-3">
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-3">
         <FiltroRango rango={rango} onCambio={setRango} />
       </div>
       {error && <div className="mb-4"><Alerta>{error}</Alerta></div>}

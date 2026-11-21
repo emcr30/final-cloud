@@ -39,20 +39,20 @@ export default function Perfil() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Mi perfil</h1>
+      <h1 className="text-3xl font-semibold text-gray-900">Mi perfil</h1>
       {mensaje && <Alerta tipo={mensaje.tipo}>{mensaje.texto}</Alerta>}
 
-      <form onSubmit={guardar} className="space-y-4 rounded-xl border border-gray-200 p-5">
+      <form onSubmit={guardar} className="space-y-4 rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900">Datos personales</h2>
         <Campo label="Correo" value={session?.user.email ?? ''} disabled />
         <Campo label="Nombre" required value={nombre} onChange={(e) => setNombre(e.target.value)} />
         <Campo label="Teléfono" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
-        <button className="inline-flex items-center gap-2 rounded-lg bg-cesped-600 px-4 py-2 font-semibold text-white hover:bg-cesped-700">
+        <button className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-cesped-600">
           <Save size={16} /> Guardar
         </button>
       </form>
 
-      <div className="rounded-xl border border-gray-200 p-5">
+      <div className="rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900">Verificación en dos pasos (MFA)</h2>
         <p className="mt-1 text-sm text-gray-600">
           Estado:{' '}
@@ -66,7 +66,7 @@ export default function Perfil() {
         </p>
         <div className="mt-4">
           {!mfa.tieneFactor && (
-            <Link to="/mfa/configurar" className="inline-flex items-center gap-2 rounded-lg bg-cesped-600 px-4 py-2 font-semibold text-white hover:bg-cesped-700">
+            <Link to="/mfa/configurar" className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-cesped-600">
               <ShieldCheck size={16} /> Activar MFA
             </Link>
           )}

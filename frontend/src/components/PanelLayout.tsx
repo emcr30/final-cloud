@@ -39,26 +39,30 @@ export default function PanelLayout() {
   if (!perfil) return null
 
   const clase = ({ isActive }: { isActive: boolean }) =>
-    `flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-      isActive ? 'bg-cesped-600 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+    `flex min-h-11 shrink-0 items-center gap-2.5 rounded-full px-4 py-2 text-sm font-medium md:rounded-xl ${
+      isActive ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
     }`
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 md:flex-row">
-      <aside className="md:w-56 md:shrink-0">
-        <div className="mb-3 rounded-xl border border-gray-200 p-3">
-          <p className="truncate font-semibold text-gray-900">{perfil.nombre || session?.user.email}</p>
-          <span className="mt-1 inline-block rounded-full bg-cesped-100 px-2 py-0.5 text-xs font-semibold text-cesped-800">
-            {NOMBRE_ROL[perfil.rol]}
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 md:flex-row md:gap-10 md:py-10">
+      <aside className="md:sticky md:top-24 md:h-fit md:w-60 md:shrink-0">
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-gray-50 p-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cesped-200 font-semibold text-gray-900">
+            {(perfil.nombre || session?.user.email || '?').charAt(0).toUpperCase()}
           </span>
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-gray-900">{perfil.nombre || session?.user.email}</p>
+            <p className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-gray-500">{NOMBRE_ROL[perfil.rol]}</p>
+          </div>
         </div>
         {/* En móvil el menú es una fila con scroll horizontal */}
-        <nav className="flex gap-1 overflow-x-auto pb-2 md:flex-col md:overflow-visible md:pb-0">
+        <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-2 md:mx-0 md:flex-col md:overflow-visible md:px-0 md:pb-0">
           {MENU[perfil.rol].map(({ to, label, icono: Icono, end }) => (
             <NavLink key={to} to={to} end={end} className={clase}>
               <Icono size={18} /> {label}
             </NavLink>
           ))}
+          <div className="my-2 hidden h-px bg-gray-200 md:block" />
           <NavLink to="/perfil" className={clase}>
             <User size={18} /> Mi perfil
           </NavLink>

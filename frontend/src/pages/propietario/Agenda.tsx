@@ -124,9 +124,9 @@ export default function Agenda() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Agenda</h1>
+      <h1 className="mb-4 text-3xl font-semibold text-gray-900">Agenda</h1>
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-3">
         <label className="text-sm">
           <span className="mb-1 block text-gray-600">Complejo</span>
           <select className={`${claseInput} py-1.5`} value={complejoId} onChange={(e) => {
@@ -164,7 +164,7 @@ export default function Agenda() {
       </div>
 
       {canchas.length === 0 ? <Alerta tipo="info">Este complejo no tiene canchas.</Alerta> : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="overflow-x-auto rounded-2xl border border-gray-200">
           <table className="w-full min-w-[640px] border-collapse text-xs">
             <thead>
               <tr className="bg-gray-50">
@@ -182,21 +182,44 @@ export default function Agenda() {
                   <th className="p-1 text-right font-normal text-gray-500">{horaTexto(h)}</th>
                   {dias.map((d) => {
                     const res = reservaEn(d, h)
-                    const esInicio = res && horaNum(res.hora_inicio) === h
                     const pasado = yaPaso(d, h)
                     const elegida = sel && sel.fecha === d && sel.hora === h
+
+                    if (res) {
+                      // Una reserva de varias horas se dibuja como UN bloque: la celda de su
+                      // primera hora visible ocupa todas sus filas (rowSpan) y las demás no se dibujan.
+                      const desde = Math.max(horaNum(res.hora_inicio), horas[0])
+                      if (h !== desde) return null
+                      const filas = Math.min(horaNum(res.hora_fin), horas[horas.length - 1] + 1) - desde
+                      const nombre = res.es_bloqueo ? 'Bloqueo' : res.jugador?.nombre.split(' ')[0] ?? 'Reserva'
+                      const rango = `${hhmm(res.hora_inicio)}–${hhmm(res.hora_fin)}`
+                      const marcada = sel?.reserva?.id === res.id
+                      return (
+                        <td key={d} rowSpan={filas} className="p-0.5 align-top">
+                          <button onClick={() => setSeleccion({ reserva: res, fecha: d, hora: desde })}
+                            title={`${res.jugador?.nombre ?? nombre} · ${rango}`}
+                            // Alto = filas × (2rem del botón + 0.25rem de padding) + 1px de borde entre filas
+                            style={{ height: `calc(${filas * 2.25 - 0.25}rem + ${filas - 1}px)` }}
+                            className={`flex w-full flex-col justify-start overflow-hidden rounded-md px-1.5 py-1 text-left leading-tight ${COLOR[res.es_bloqueo ? 'bloqueo' : res.estado]} ${marcada ? 'ring-2 ring-gray-900 ring-offset-1' : ''}`}>
+                            {filas > 1 ? (
+                              <>
+                                <span className="truncate font-semibold">{nombre}</span>
+                                <span className="truncate font-mono text-[0.68rem] opacity-90">{rango}</span>
+                              </>
+                            ) : (
+                              <span className="truncate"><b className="font-semibold">{nombre}</b> <span className="font-mono text-[0.68rem] opacity-90">· {rango}</span></span>
+                            )}
+                          </button>
+                        </td>
+                      )
+                    }
+
                     return (
                       <td key={d} className="p-0.5">
-                        {res ? (
-                          <button onClick={() => setSeleccion({ reserva: res, fecha: d, hora: h })}
-                            className={`h-8 w-full truncate rounded px-1 text-left ${COLOR[res.es_bloqueo ? 'bloqueo' : res.estado]} ${elegida ? 'ring-2 ring-gray-900' : ''}`}>
-                            {esInicio ? (res.es_bloqueo ? 'Bloqueo' : res.jugador?.nombre.split(' ')[0] ?? 'Reserva') : '↳'}
-                          </button>
-                        ) : (
-                          <button disabled={pasado} onClick={() => setSeleccion({ fecha: d, hora: h })}
-                            className={`h-8 w-full rounded border border-dashed ${pasado ? 'cursor-default border-transparent bg-gray-50' : 'border-gray-200 hover:border-cesped-500 hover:bg-cesped-50'} ${elegida ? 'ring-2 ring-gray-900' : ''}`}
-                            aria-label={`Libre ${d} ${horaTexto(h)}`} />
-                        )}
+                        {/* Hora libre: clic para bloquearla */}
+                        <button disabled={pasado} onClick={() => setSeleccion({ fecha: d, hora: h })}
+                          className={`h-8 w-full rounded border border-dashed ${pasado ? 'cursor-default border-transparent bg-gray-50' : 'border-gray-200 hover:border-cesped-500 hover:bg-cesped-50'} ${elegida ? 'ring-2 ring-gray-900' : ''}`}
+                          aria-label={`Libre ${d} ${horaTexto(h)}`} />
                       </td>
                     )
                   })}
@@ -209,7 +232,7 @@ export default function Agenda() {
 
       {/* Panel de la celda elegida */}
       {sel && (
-        <div className="mt-4 rounded-xl border border-gray-200 p-4">
+        <div className="mt-4 rounded-2xl border border-gray-200 p-4">
           <p className="font-semibold capitalize text-gray-900">{fechaLarga(sel.fecha)}</p>
           {r ? (
             <>

@@ -70,7 +70,7 @@ export default function AdminUsuarios() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Usuarios</h1>
+      <h1 className="mb-4 text-3xl font-semibold text-gray-900">Usuarios</h1>
       <div className="mb-4 flex flex-wrap gap-2">
         <label className="relative min-w-56 flex-1">
           <Search size={16} className="absolute top-3 left-3 text-gray-400" />
@@ -88,7 +88,7 @@ export default function AdminUsuarios() {
       {!usuarios ? <Cargando /> : usuarios.length === 0 ? (
         <p className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-gray-500">No hay usuarios que coincidan.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="overflow-x-auto rounded-2xl border border-gray-200">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-gray-50 text-left text-xs text-gray-600 uppercase">
               <tr>

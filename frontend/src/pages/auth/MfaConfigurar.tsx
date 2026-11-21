@@ -87,7 +87,7 @@ export default function MfaConfigurar() {
       </ol>
 
       {qr ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-gray-200 p-4">
           <img src={qr} alt="Código QR para la app autenticadora" className="h-44 w-44" />
           <p className="text-xs text-gray-500">Código secreto</p>
           <code className="break-all rounded bg-gray-100 px-2 py-1 text-center text-xs">{secreto}</code>
