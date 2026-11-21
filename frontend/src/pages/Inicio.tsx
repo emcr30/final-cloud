@@ -21,11 +21,11 @@ export default function Inicio() {
       <section className="bg-gradient-to-br from-cesped-700 to-cesped-900 text-white">
         <div className="mx-auto max-w-6xl px-4 py-20 sm:py-28">
           <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm text-cesped-100">
-            <MapPin size={14} /> Complejos deportivos en todo Lima
+            <MapPin size={14} /> Complejos deportivos en todo Arequipa
           </p>
           <h1 className="max-w-2xl text-4xl font-extrabold tracking-tight sm:text-5xl">Tu cancha de fútbol, a un clic.</h1>
           <p className="mt-4 max-w-xl text-lg text-cesped-100">
-            Reserva canchas de fútbol 5, 7 y 11 en los mejores complejos de Lima y paga en línea.
+            Reserva canchas de fútbol 5, 7 y 11 en los mejores complejos de Arequipa y paga en línea.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/canchas" className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 font-semibold text-cesped-800 shadow hover:bg-cesped-50">

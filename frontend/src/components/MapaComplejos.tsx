@@ -5,7 +5,7 @@ import L from 'leaflet'
 import iconoUrl from 'leaflet/dist/images/marker-icon.png'
 import icono2xUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import sombraUrl from 'leaflet/dist/images/marker-shadow.png'
-import { CENTRO_LIMA, soles, type Complejo } from '../lib/canchas'
+import { CENTRO_MAPA, soles, type Complejo } from '../lib/canchas'
 
 // Con Vite, Leaflet no encuentra sus íconos por defecto: se los indicamos a mano.
 L.Icon.Default.mergeOptions({ iconUrl: iconoUrl, iconRetinaUrl: icono2xUrl, shadowUrl: sombraUrl })
@@ -34,7 +34,7 @@ interface Props {
 
 /** Mapa de OpenStreetMap (sin API key) con un marcador por complejo. */
 export default function MapaComplejos({
-  complejos, centro = CENTRO_LIMA, zoom = 11, miUbicacion, alto = 'h-[28rem]', conEnlace = true,
+  complejos, centro = CENTRO_MAPA, zoom = 12, miUbicacion, alto = 'h-[28rem]', conEnlace = true,
 }: Props) {
   return (
     <div className={`${alto} overflow-hidden rounded-xl border border-gray-200`}>

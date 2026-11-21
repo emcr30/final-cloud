@@ -1,6 +1,7 @@
 /**
  * Tipos y utilidades del flujo del jugador (buscar, reservar, mis reservas).
- * Todo lo relacionado con fechas usa la hora de Lima (UTC-5, sin horario de verano).
+ * Todo lo relacionado con fechas usa la zona America/Lima (UTC-5, sin horario de verano),
+ * que es la hora oficial de todo el Perú, incluida Arequipa.
  */
 
 export type TipoCancha = 'futbol5' | 'futbol7' | 'futbol11'
@@ -77,8 +78,8 @@ export const ESTADO_RESERVA: Record<EstadoReserva, { texto: string; clase: strin
   completada: { texto: 'Completada', clase: 'bg-blue-100 text-blue-800' },
 }
 
-/** Centro de Lima, para centrar el mapa cuando no hay otra referencia. */
-export const CENTRO_LIMA: [number, number] = [-12.07, -77.03]
+/** Centro de Arequipa (Plaza de Armas), para centrar el mapa cuando no hay otra referencia. */
+export const CENTRO_MAPA: [number, number] = [-16.395, -71.54]
 
 /** 80 → "S/ 80.00" */
 export function soles(monto: number) {

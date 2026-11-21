@@ -1,6 +1,6 @@
 # ⚽ CanchaYa
 
-Plataforma **SaaS multi-tenant** para reservar canchas de fútbol en Lima. Varios complejos deportivos (tenants) publican sus canchas en la misma plataforma. Los jugadores buscan en un mapa, reservan por horas y pagan en línea. Cada complejo solo ve y administra sus propios datos.
+Plataforma **SaaS multi-tenant** para reservar canchas de fútbol en Arequipa. Varios complejos deportivos (tenants) publican sus canchas en la misma plataforma. Los jugadores buscan en un mapa, reservan por horas y pagan en línea. Cada complejo solo ve y administra sus propios datos.
 
 > Trabajo final del curso **Cloud Computing** (Ingeniería de Software).
 

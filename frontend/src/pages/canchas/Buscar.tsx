@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { Alerta, Cargando } from '../../components/ui'
 import MapaComplejos from '../../components/MapaComplejos'
 import FotoComplejo from '../../components/FotoComplejo'
-import { CENTRO_LIMA, NOMBRE_TIPO, distanciaKm, soles, type Complejo, type TipoCancha } from '../../lib/canchas'
+import { CENTRO_MAPA, NOMBRE_TIPO, distanciaKm, soles, type Complejo, type TipoCancha } from '../../lib/canchas'
 
 /**
  * /canchas (pública): lista + mapa de complejos activos.
@@ -133,8 +133,8 @@ export default function Buscar() {
           <MapaComplejos
             complejos={resultados}
             miUbicacion={miUbicacion}
-            centro={miUbicacion ?? CENTRO_LIMA}
-            zoom={miUbicacion ? 13 : 11}
+            centro={miUbicacion ?? CENTRO_MAPA}
+            zoom={miUbicacion ? 14 : 12}
           />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

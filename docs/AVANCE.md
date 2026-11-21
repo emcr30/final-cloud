@@ -45,7 +45,7 @@ Plantilla para cada parte:
   - `20261120000100_esquema.sql`: enums, tablas `profiles`, `complejos`, `canchas`, `reservas`, `pagos`, `notificaciones_log` con FKs, índices y CHECKs. Restricción `reservas_sin_solapamiento` (EXCLUDE con btree_gist, ignora canceladas) y trigger `validar_reserva`.
   - `20261120000200_auth_rls.sql`: trigger que crea el perfil `jugador` al registrarse, helpers `mi_rol()`, `es_propietario_de()` y afines (security definer), RLS en todas las tablas (19 políticas) y RPC `disponibilidad(cancha_id, fecha)`.
   - `20261120000300_vistas_storage.sql`: vistas `v_ingresos_diarios`, `v_ocupacion_cancha`, `v_reservas_por_estado`, `v_horas_pico` (security_invoker) y bucket `complejos` con sus políticas.
-- `supabase/seed.sql`: 5 complejos en Lima (Surco, Miraflores, San Borja, Los Olivos, SJL) con 12 canchas.
+- `supabase/seed.sql`: 5 complejos en Arequipa (Yanahuara, Cayma, Sachaca, Bustamante y Rivero, Cerro Colorado) con 12 canchas (ver Parte 4.1).
 - `scripts/crear_usuarios_demo.py`: crea `admin@`, `propietario1@`, `propietario2@` y `jugador@canchaya.demo` (contraseña `Demo1234!`), asigna roles y complejos y genera ~4 semanas de reservas (`seed_asociar_demo()`).
 
 **Cómo probar**
@@ -111,3 +111,19 @@ Plantilla para cada parte:
 **Pendiente / notas**
 - La cancelación con menos de 2 horas no se pudo probar automáticamente (se corrió fuera del horario de atención); la regla está en la política RLS.
 - Al cancelar una reserva pagada no hay reembolso automático (modo prueba); se anota para el informe.
+
+## Parte 4.1 — Datos demo en Arequipa (21-nov-2026)
+
+**Hecho**
+- `supabase/seed.sql`: los 5 complejos de Lima se reemplazaron por complejos de **Arequipa** (mismos IDs, así el script de usuarios demo no cambia):
+  - propietario1 → Yanahuara Fútbol Club (Yanahuara), Cayma Sport Center (Cayma), La Campiña de Sachaca (Sachaca).
+  - propietario2 → Bustamante Arena (José Luis Bustamante y Rivero), Cerro Colorado Gol Center (Cerro Colorado).
+  - Canchas con nombres locales: Misti, Chachani, Pichu Pichu, Sillar, Chili, Ampato, Estadio La Campiña…
+- En la base remota se borraron los complejos de Lima (con sus canchas, reservas y pagos en cascada), se ejecutó el seed nuevo y `crear_usuarios_demo.py` (1741 reservas demo nuevas).
+- El mapa ahora se centra en Arequipa (`CENTRO_MAPA`) y la landing/README dicen Arequipa. La zona horaria sigue siendo `America/Lima`, que es la hora oficial de todo el Perú.
+
+**Cómo probar**
+- http://localhost:5173/canchas → aparecen los 5 complejos de Arequipa en la lista y en el mapa.
+
+**Notas**
+- `supabase db push --include-seed` no vuelve a ejecutar un seed ya aplicado (solo actualiza su hash). Para recargarlo: `supabase db query --remote -f supabase/seed.sql`.

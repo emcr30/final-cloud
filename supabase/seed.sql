@@ -9,50 +9,51 @@
 -- Todo es idempotente: se puede ejecutar varias veces sin duplicar datos.
 
 -- ---------------------------------------------------------------------
--- Complejos (IDs fijos para poder referenciarlos) — Lima, coordenadas aproximadas
+-- Complejos (IDs fijos para poder referenciarlos) — Arequipa, coordenadas aproximadas
 -- ---------------------------------------------------------------------
 insert into public.complejos
   (id, nombre, descripcion, direccion, distrito, lat, lng, hora_apertura, hora_cierre, estado)
 values
-  ('c0000000-0000-4000-8000-000000000001', 'La Bombonera de Surco',
-   'Canchas sintéticas techadas, vestuarios con duchas y estacionamiento propio.',
-   'Av. Caminos del Inca 1450', 'Santiago de Surco', -12.1290, -76.9940, '08:00', '23:00', 'activo'),
-  ('c0000000-0000-4000-8000-000000000002', 'Miraflores Fútbol Club',
-   'A dos cuadras del Parque Kennedy. Césped sintético de última generación e iluminación LED.',
-   'Calle Juan Fanning 520', 'Miraflores', -12.1255, -77.0240, '07:00', '23:00', 'activo'),
-  ('c0000000-0000-4000-8000-000000000003', 'San Borja Sport Center',
-   'Complejo familiar con cancha de grass natural para fútbol 11 y cafetería.',
-   'Av. San Borja Norte 1050', 'San Borja', -12.0920, -77.0000, '08:00', '22:00', 'activo'),
-  ('c0000000-0000-4000-8000-000000000004', 'Los Olivos Arena',
-   'Canchas de fútbol 5 y 7 a precios accesibles, ideal para pichangas de la semana.',
-   'Av. Carlos Izaguirre 900', 'Los Olivos', -11.9900, -77.0700, '09:00', '23:00', 'activo'),
-  ('c0000000-0000-4000-8000-000000000005', 'SJL Gol Center',
-   'El complejo más grande de San Juan de Lurigancho: losa y sintético, torneos los domingos.',
-   'Av. Próceres de la Independencia 2100', 'San Juan de Lurigancho', -11.9950, -77.0050, '08:00', '23:00', 'activo')
+  ('c0000000-0000-4000-8000-000000000001', 'Yanahuara Fútbol Club',
+   'A pasos del mirador de Yanahuara. Canchas sintéticas techadas, vestuarios con duchas y estacionamiento.',
+   'Av. Ejército 710', 'Yanahuara', -16.3895, -71.5440, '08:00', '23:00', 'activo'),
+  ('c0000000-0000-4000-8000-000000000002', 'Cayma Sport Center',
+   'Césped sintético de última generación, iluminación LED y vista al Misti.',
+   'Av. Cayma 450', 'Cayma', -16.3720, -71.5420, '07:00', '23:00', 'activo'),
+  ('c0000000-0000-4000-8000-000000000003', 'La Campiña de Sachaca',
+   'Complejo campestre con cancha de grass natural para fútbol 11, picantería y área para niños.',
+   'Av. Fernandini 300', 'Sachaca', -16.4250, -71.5650, '08:00', '22:00', 'activo'),
+  ('c0000000-0000-4000-8000-000000000004', 'Bustamante Arena',
+   'Canchas de fútbol 5 y 7 a precios accesibles, ideal para las pichangas de la semana.',
+   'Av. Dolores 1200', 'José Luis Bustamante y Rivero', -16.4180, -71.5170, '09:00', '23:00', 'activo'),
+  ('c0000000-0000-4000-8000-000000000005', 'Cerro Colorado Gol Center',
+   'El complejo más grande del cono norte: losa y sintético, torneos los domingos.',
+   'Av. Aviación 1500', 'Cerro Colorado', -16.3640, -71.5600, '08:00', '23:00', 'activo')
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------
--- Canchas (2-3 por complejo, precios entre 60 y 150 PEN por hora)
+-- Canchas (2-3 por complejo, precios entre 60 y 150 PEN por hora).
+-- Llevan nombres de los volcanes y lugares de Arequipa.
 -- ---------------------------------------------------------------------
 insert into public.canchas (id, complejo_id, nombre, tipo, superficie, precio_hora) values
-  ('ca000000-0000-4000-8000-000000000101', 'c0000000-0000-4000-8000-000000000001', 'Cancha 1', 'futbol7', 'sintetico', 120),
-  ('ca000000-0000-4000-8000-000000000102', 'c0000000-0000-4000-8000-000000000001', 'Cancha 2', 'futbol5', 'sintetico',  80),
-  ('ca000000-0000-4000-8000-000000000103', 'c0000000-0000-4000-8000-000000000001', 'Cancha 3', 'futbol5', 'sintetico',  80),
-  ('ca000000-0000-4000-8000-000000000201', 'c0000000-0000-4000-8000-000000000002', 'Cancha Principal', 'futbol7', 'sintetico', 150),
-  ('ca000000-0000-4000-8000-000000000202', 'c0000000-0000-4000-8000-000000000002', 'Cancha Chica',     'futbol5', 'sintetico', 100),
-  ('ca000000-0000-4000-8000-000000000301', 'c0000000-0000-4000-8000-000000000003', 'Estadio',  'futbol11', 'natural',   150),
-  ('ca000000-0000-4000-8000-000000000302', 'c0000000-0000-4000-8000-000000000003', 'Cancha B', 'futbol7',  'sintetico', 110),
-  ('ca000000-0000-4000-8000-000000000401', 'c0000000-0000-4000-8000-000000000004', 'Cancha A', 'futbol5', 'sintetico', 70),
-  ('ca000000-0000-4000-8000-000000000402', 'c0000000-0000-4000-8000-000000000004', 'Cancha B', 'futbol7', 'sintetico', 90),
-  ('ca000000-0000-4000-8000-000000000403', 'c0000000-0000-4000-8000-000000000004', 'Losa',     'futbol5', 'losa',      60),
-  ('ca000000-0000-4000-8000-000000000501', 'c0000000-0000-4000-8000-000000000005', 'Sintética 1', 'futbol7', 'sintetico', 85),
-  ('ca000000-0000-4000-8000-000000000502', 'c0000000-0000-4000-8000-000000000005', 'Losa Central', 'futbol5', 'losa',   60)
+  ('ca000000-0000-4000-8000-000000000101', 'c0000000-0000-4000-8000-000000000001', 'Cancha Misti',       'futbol7', 'sintetico', 120),
+  ('ca000000-0000-4000-8000-000000000102', 'c0000000-0000-4000-8000-000000000001', 'Cancha Chachani',    'futbol5', 'sintetico',  80),
+  ('ca000000-0000-4000-8000-000000000103', 'c0000000-0000-4000-8000-000000000001', 'Cancha Pichu Pichu', 'futbol5', 'sintetico',  80),
+  ('ca000000-0000-4000-8000-000000000201', 'c0000000-0000-4000-8000-000000000002', 'Cancha Principal',   'futbol7', 'sintetico', 150),
+  ('ca000000-0000-4000-8000-000000000202', 'c0000000-0000-4000-8000-000000000002', 'Cancha Sillar',      'futbol5', 'sintetico', 100),
+  ('ca000000-0000-4000-8000-000000000301', 'c0000000-0000-4000-8000-000000000003', 'Estadio La Campiña', 'futbol11', 'natural',  150),
+  ('ca000000-0000-4000-8000-000000000302', 'c0000000-0000-4000-8000-000000000003', 'Cancha Chili',       'futbol7', 'sintetico', 110),
+  ('ca000000-0000-4000-8000-000000000401', 'c0000000-0000-4000-8000-000000000004', 'Cancha A',           'futbol5', 'sintetico',  70),
+  ('ca000000-0000-4000-8000-000000000402', 'c0000000-0000-4000-8000-000000000004', 'Cancha B',           'futbol7', 'sintetico',  90),
+  ('ca000000-0000-4000-8000-000000000403', 'c0000000-0000-4000-8000-000000000004', 'Losa',               'futbol5', 'losa',       60),
+  ('ca000000-0000-4000-8000-000000000501', 'c0000000-0000-4000-8000-000000000005', 'Cancha Ampato',      'futbol7', 'sintetico',  85),
+  ('ca000000-0000-4000-8000-000000000502', 'c0000000-0000-4000-8000-000000000005', 'Losa Central',       'futbol5', 'losa',       60)
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------
 -- seed_asociar_demo(): se llama cuando ya existen los usuarios demo.
---  * propietario1@canchaya.demo → Surco, Miraflores, San Borja
---  * propietario2@canchaya.demo → Los Olivos, SJL
+--  * propietario1@canchaya.demo → Yanahuara, Cayma, Sachaca
+--  * propietario2@canchaya.demo → Bustamante y Rivero, Cerro Colorado
 --  * jugador@canchaya.demo      → reservas de las últimas 4 semanas + próximos días
 -- Solo la service role puede ejecutarla.
 -- ---------------------------------------------------------------------
@@ -66,7 +67,7 @@ declare
   v_prop1   uuid;
   v_prop2   uuid;
   v_jugador uuid;
-  v_hoy     date := (now() at time zone 'America/Lima')::date;
+  v_hoy     date := (now() at time zone 'America/Lima')::date;  -- Arequipa usa la misma zona horaria
   v_n       int;
 begin
   select id into v_prop1   from auth.users where email = 'propietario1@canchaya.demo';
