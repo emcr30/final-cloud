@@ -37,3 +37,34 @@ Plantilla para cada parte:
 
 **Pendiente / notas**
 - Docker no está instalado en la máquina de desarrollo, así que la imagen no se construyó en local. Se valida en GitHub Actions (Parte 9) y en Render.
+
+## Parte 3 — Autenticación, MFA y paneles por rol (20-nov-2026)
+
+**Hecho**
+- Frontend
+  - `src/context/AuthContext.tsx`: sesión de Supabase, perfil (`profiles.rol`) y estado MFA (nivel AAL actual + si tiene factor TOTP verificado). Helpers `rutaPanel(rol)` y `pasoMfaPendiente()`.
+  - Páginas públicas: `/login`, `/registro` (nombre, teléfono, email, contraseña → siempre `jugador`; nombre/teléfono van como metadata y el trigger los copia a `profiles`), `/recuperar` y `/nueva-password` (destino del enlace de recuperación).
+  - MFA TOTP con `supabase.auth.mfa`: `/mfa/configurar` (enroll → QR + código secreto → verificar) y `/mfa/verificar` (challenge + verify tras la contraseña).
+  - `RutaProtegida`: sin sesión → `/login`; **admin y propietario sin factor → `/mfa/configurar`** (obligatorio); cualquier usuario con factor y sesión `aal1` → `/mfa/verificar`; rol incorrecto → `/403`.
+  - Rutas `/admin/*`, `/propietario/*`, `/jugador/*` con `PanelLayout` (sidebar distinta por rol; en móvil es una fila desplazable). Las secciones aún no hechas muestran "en construcción".
+  - `/perfil`: editar nombre/teléfono, ver estado MFA y sesión (aal1/aal2), activar MFA (y desactivarlo solo si el rol no lo exige), cerrar sesión.
+  - Página `/403`, navbar con "Mi panel"/"Salir" cuando hay sesión y landing completa (hero, cómo funciona, sección para complejos con "Registra tu complejo").
+  - `src/lib/api.ts`: `api()` llama al backend con `Authorization: Bearer <token>`; `traducirError()` pasa los errores de Supabase Auth al español.
+- Backend
+  - `app/deps.py`: el `Usuario` ahora incluye `aal` (leído del claim del JWT, que ya fue validado con `auth.get_user`). Nuevas dependencias `require_role(*roles)` (si el rol es admin/propietario exige además AAL2) y `require_aal2`.
+  - `GET /me` (cualquier usuario logueado) y `GET /me/admin` (solo admin con MFA). Los paneles tienen un botón "Probar backend" que los llama.
+  - `tests/test_auth.py`: 6 pruebas (401 sin token, lectura del claim aal, rechazo por rol, MFA obligatorio para admin, jugador sin MFA, require_aal2).
+
+**Cómo probar**
+1. `cd backend && pytest` → 14 pruebas en verde. `cd frontend && npm run build && npm run lint` → sin errores.
+2. Con la base migrada y los usuarios demo creados (Parte 2), `npm run dev` y `uvicorn app.main:app --reload`:
+   - `jugador@canchaya.demo` / `Demo1234!` → entra directo a `/jugador`. "Probar backend: GET /me" devuelve `rol: jugador, aal: aal1`. Ir a `/admin` → página 403.
+   - `propietario1@canchaya.demo` → la primera vez lo manda a `/mfa/configurar`: escanear el QR con Google Authenticator, ingresar el código → `/propietario`.
+   - Cerrar sesión y volver a entrar con el propietario → pide el código en `/mfa/verificar`.
+   - `admin@canchaya.demo` (con MFA) → `/admin`, "Probar backend: GET /me/admin" responde 200. Sin MFA el backend respondería 403.
+   - Registro: crear una cuenta nueva en `/registro` → queda como `jugador`.
+3. Para el enlace de recuperación de contraseña, agregar `http://localhost:5173/nueva-password` (y luego el dominio de Vercel) en Supabase → Authentication → URL Configuration → Redirect URLs.
+
+**Pendiente / notas**
+- La prueba end-to-end con los usuarios demo no se pudo correr al cerrar esta parte: la base remota aún no tenía las migraciones y `backend/.env` tenía la llave **anon** en `SUPABASE_SERVICE_ROLE_KEY` (el backend se detiene al arrancar con un mensaje claro). Hay que pegar la llave secreta (`sb_secret_...` o la legacy `service_role`).
+- El control de rutas del frontend es solo UX: la seguridad real está en RLS y en `require_role` / `require_aal2` del backend.
