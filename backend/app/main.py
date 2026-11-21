@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings, validar_service_role_key
-from app.routers import health
+from app.routers import health, me
 
 settings = get_settings()
 
@@ -38,6 +38,7 @@ app.add_middleware(
 
 # Routers (se agregan más en las siguientes partes: pagos, reportes, admin...)
 app.include_router(health.router)
+app.include_router(me.router)
 
 
 @app.get("/", include_in_schema=False)
