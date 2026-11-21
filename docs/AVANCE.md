@@ -38,6 +38,24 @@ Plantilla para cada parte:
 **Pendiente / notas**
 - Docker no está instalado en la máquina de desarrollo, así que la imagen no se construyó en local. Se valida en GitHub Actions (Parte 9) y en Render.
 
+## Parte 2 — Base de datos, RLS y datos de prueba (20-nov-2026)
+
+**Hecho**
+- `supabase/migrations/`:
+  - `20261120000100_esquema.sql`: enums, tablas `profiles`, `complejos`, `canchas`, `reservas`, `pagos`, `notificaciones_log` con FKs, índices y CHECKs. Restricción `reservas_sin_solapamiento` (EXCLUDE con btree_gist, ignora canceladas) y trigger `validar_reserva`.
+  - `20261120000200_auth_rls.sql`: trigger que crea el perfil `jugador` al registrarse, helpers `mi_rol()`, `es_propietario_de()` y afines (security definer), RLS en todas las tablas (19 políticas) y RPC `disponibilidad(cancha_id, fecha)`.
+  - `20261120000300_vistas_storage.sql`: vistas `v_ingresos_diarios`, `v_ocupacion_cancha`, `v_reservas_por_estado`, `v_horas_pico` (security_invoker) y bucket `complejos` con sus políticas.
+- `supabase/seed.sql`: 5 complejos en Lima (Surco, Miraflores, San Borja, Los Olivos, SJL) con 12 canchas.
+- `scripts/crear_usuarios_demo.py`: crea `admin@`, `propietario1@`, `propietario2@` y `jugador@canchaya.demo` (contraseña `Demo1234!`), asigna roles y complejos y genera ~4 semanas de reservas (`seed_asociar_demo()`).
+
+**Cómo probar**
+1. `supabase link --project-ref <ref>` y `supabase db push --remote --include-seed` (la contraseña de la BD por la variable `SUPABASE_DB_PASSWORD`, nunca en archivos).
+2. `backend/.venv/bin/python scripts/crear_usuarios_demo.py`.
+3. Verificado el 21-nov-2026 en el proyecto remoto: 6 tablas con RLS, 5 complejos con dueño, 12 canchas, 1741 reservas, 4 usuarios demo. Con la API pública: anónimo ve 5 complejos y 0 reservas; el jugador ve solo sus reservas; propietario1 solo reservas de sus complejos.
+
+**Pendiente / notas**
+- Requiere `supabase==2.28.3` (las versiones antiguas rechazan las llaves `sb_secret_`).
+
 ## Parte 3 — Autenticación, MFA y paneles por rol (20-nov-2026)
 
 **Hecho**
@@ -66,5 +84,5 @@ Plantilla para cada parte:
 3. Para el enlace de recuperación de contraseña, agregar `http://localhost:5173/nueva-password` (y luego el dominio de Vercel) en Supabase → Authentication → URL Configuration → Redirect URLs.
 
 **Pendiente / notas**
-- La prueba end-to-end con los usuarios demo no se pudo correr al cerrar esta parte: la base remota aún no tenía las migraciones y `backend/.env` tenía la llave **anon** en `SUPABASE_SERVICE_ROLE_KEY` (el backend se detiene al arrancar con un mensaje claro). Hay que pegar la llave secreta (`sb_secret_...` o la legacy `service_role`).
+- Probado el 21-nov-2026 con la base remota: propietario1 configuró TOTP y `GET /me` devolvió `aal: aal2`.
 - El control de rutas del frontend es solo UX: la seguridad real está en RLS y en `require_role` / `require_aal2` del backend.
