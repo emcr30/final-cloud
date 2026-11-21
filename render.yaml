@@ -9,8 +9,8 @@ services:
     plan: free
     region: virginia            # la más cercana a Supabase São Paulo entre las de Render
     rootDir: backend            # solo cambios en backend/ redespliegan
-    dockerfilePath: ./backend/Dockerfile   # relativo a la raíz del repo
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile   # relativo a la raíz del repo
+    dockerContext: .
     healthCheckPath: /health    # Render reinicia el servicio si deja de responder
     autoDeploy: true            # cada push a main redespliega
     envVars:
