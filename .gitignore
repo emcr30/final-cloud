@@ -1,31 +1,27 @@
 # Dependencias y builds
 node_modules/
 dist/
-dist-ssr/
-
-# Python
-__pycache__/
-*.pyc
+build/
 .venv/
 venv/
+__pycache__/
+*.pyc
 .pytest_cache/
 
-# Secretos: nunca se suben (usar .env.example como plantilla)
+# Secretos
 .env
 .env.*
 !.env.example
 
-# Supabase CLI (archivos locales)
-supabase/.branches/
+# Supabase local
 supabase/.temp/
+supabase/.branches/
 
-# Sistema / editores
+# Sistema / editor
 .DS_Store
-.idea/
-.vscode/*
-!.vscode/extensions.json
-*.log
+.vscode/
 
+# Archivos locales de trabajo
 CLAUDE.md
 PROMPTS_CLAUDE_CODE.md
 .claude/
