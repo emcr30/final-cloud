@@ -12,11 +12,15 @@ import NuevaPassword from './pages/auth/NuevaPassword'
 import MfaConfigurar from './pages/auth/MfaConfigurar'
 import MfaVerificar from './pages/auth/MfaVerificar'
 import Perfil from './pages/panel/Perfil'
-import { AdminInicio, EnConstruccion, JugadorInicio, PropietarioInicio } from './pages/panel/Paneles'
+import { AdminInicio, EnConstruccion, PropietarioInicio } from './pages/panel/Paneles'
+import Buscar from './pages/canchas/Buscar'
+import Detalle from './pages/canchas/Detalle'
+import JugadorInicio from './pages/jugador/Inicio'
+import MisReservas from './pages/jugador/Reservas'
 
 /**
  * Mapa de rutas:
- *  - Públicas: landing, login, registro, recuperar contraseña.
+ *  - Públicas: landing, buscar canchas (lista/mapa), detalle del complejo, login, registro, recuperar contraseña.
  *  - MFA: configurar / verificar (requieren sesión; la página lo controla).
  *  - Privadas por rol: /admin/*, /propietario/*, /jugador/* (RutaProtegida).
  */
@@ -26,6 +30,8 @@ export default function App() {
       <Route element={<Layout />}>
         {/* Públicas */}
         <Route index element={<Inicio />} />
+        <Route path="canchas" element={<Buscar />} />
+        <Route path="canchas/:complejoId" element={<Detalle />} />
         <Route path="login" element={<Login />} />
         <Route path="registro" element={<Registro />} />
         <Route path="recuperar" element={<Recuperar />} />
@@ -57,6 +63,7 @@ export default function App() {
         <Route path="jugador" element={<RutaProtegida roles={['jugador']} />}>
           <Route element={<PanelLayout />}>
             <Route index element={<JugadorInicio />} />
+            <Route path="reservas" element={<MisReservas />} />
             <Route path="*" element={<EnConstruccion />} />
           </Route>
         </Route>

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Construction, ServerCog } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
@@ -7,7 +6,7 @@ import { Alerta } from '../../components/ui'
 
 /**
  * Páginas de inicio de cada panel (provisionales).
- * Se completan en: Parte 4 (jugador), Parte 6 (propietario) y Parte 7 (admin).
+ * Se completan en: Parte 6 (propietario) y Parte 7 (admin). El del jugador está en pages/jugador/.
  */
 
 function Encabezado({ titulo, texto }: { titulo: string; texto: string }) {
@@ -44,18 +43,6 @@ function ProbarBackend({ ruta }: { ruta: string }) {
         </div>
       )}
     </div>
-  )
-}
-
-export function JugadorInicio() {
-  return (
-    <>
-      <Encabezado titulo="Mi panel" texto="Aquí verás tu próxima reserva, lo gastado y tus reservas del mes." />
-      <Link to="/canchas" className="inline-block rounded-lg bg-cesped-600 px-5 py-2.5 font-semibold text-white hover:bg-cesped-700">
-        Buscar canchas
-      </Link>
-      <div className="mt-6"><ProbarBackend ruta="/me" /></div>
-    </>
   )
 }
 
