@@ -23,6 +23,9 @@ USUARIOS = [
     ("propietario1@canchaya.demo", "Pedro Propietario", "999000002", "propietario"),
     ("propietario2@canchaya.demo", "Paula Propietaria", "999000003", "propietario"),
     ("jugador@canchaya.demo", "Juan Jugador", "999000004", "jugador"),
+    # Jugador de la demo en vivo: correo real para recibir los correos de Resend
+    # (sin dominio propio, Resend solo entrega al correo dueño de la cuenta).
+    ("echipanar@ulasalle.edu.pe", "Evelyn Chipana", "999000005", "jugador"),
 ]
 
 

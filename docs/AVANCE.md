@@ -46,7 +46,7 @@ Plantilla para cada parte:
   - `20261120000200_auth_rls.sql`: trigger que crea el perfil `jugador` al registrarse, helpers `mi_rol()`, `es_propietario_de()` y afines (security definer), RLS en todas las tablas (19 políticas) y RPC `disponibilidad(cancha_id, fecha)`.
   - `20261120000300_vistas_storage.sql`: vistas `v_ingresos_diarios`, `v_ocupacion_cancha`, `v_reservas_por_estado`, `v_horas_pico` (security_invoker) y bucket `complejos` con sus políticas.
 - `supabase/seed.sql`: 5 complejos en Arequipa (Yanahuara, Cayma, Sachaca, Bustamante y Rivero, Cerro Colorado) con 12 canchas (ver Parte 4.1).
-- `scripts/crear_usuarios_demo.py`: crea `admin@`, `propietario1@`, `propietario2@` y `jugador@canchaya.demo` (contraseña `Demo1234!`), asigna roles y complejos y genera ~4 semanas de reservas (`seed_asociar_demo()`).
+- `scripts/crear_usuarios_demo.py`: crea `admin@`, `propietario1@`, `propietario2@` y `jugador@canchaya.demo` (contraseña `Demo1234!`), más un jugador con correo real (`echipanar@ulasalle.edu.pe`) para recibir los correos de Resend en la demo, asigna roles y complejos y genera ~4 semanas de reservas (`seed_asociar_demo()`).
 
 **Cómo probar**
 1. `supabase link --project-ref <ref>` y `supabase db push --remote --include-seed` (la contraseña de la BD por la variable `SUPABASE_DB_PASSWORD`, nunca en archivos).
