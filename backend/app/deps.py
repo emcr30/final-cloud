@@ -13,7 +13,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from supabase import Client, create_client
 
-from app.config import get_settings
+from app.config import get_settings, validar_service_role_key
 
 # auto_error=False para devolver nuestro propio mensaje 401 en español
 bearer = HTTPBearer(auto_error=False)
@@ -25,6 +25,8 @@ def get_supabase() -> Client:
     s = get_settings()
     if not s.supabase_url or not s.supabase_service_role_key:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Supabase no está configurado en el backend")
+    # Acepta llaves nuevas (sb_secret_...) y legacy (eyJ... service_role); rechaza las públicas
+    validar_service_role_key(s.supabase_service_role_key)
     return create_client(s.supabase_url, s.supabase_service_role_key)
 
 
