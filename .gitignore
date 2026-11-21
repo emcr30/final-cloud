@@ -25,3 +25,7 @@ supabase/.temp/
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+CLAUDE.md
+PROMPTS_CLAUDE_CODE.md
+.claude/
