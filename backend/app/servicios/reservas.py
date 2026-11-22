@@ -35,11 +35,24 @@ def leer_para_cancelar(sb: Client, reserva_id: str) -> dict:
     return r.data
 
 
+def ahora_lima() -> datetime:
+    """Hora actual CON zona horaria del negocio (America/Lima), no la del servidor.
+
+    Está en una función aparte para que las pruebas puedan "congelar el reloj".
+    """
+    return datetime.now(ZoneInfo(get_settings().timezone))
+
+
 def faltan_mas_de_2_horas(reserva: dict) -> bool:
-    """¿El partido empieza en más de 2 horas? (hora de Lima)"""
-    tz = ZoneInfo(get_settings().timezone)
-    inicio = datetime.fromisoformat(f'{reserva["fecha"]}T{reserva["hora_inicio"]}').replace(tzinfo=tz)
-    return inicio > datetime.now(tz) + timedelta(hours=HORAS_MINIMAS_CANCELACION)
+    """¿El partido empieza en más de 2 horas?
+
+    Ambos lados son datetimes con zona America/Lima: la fecha y hora de la
+    reserva se guardan en hora de Lima, y "ahora" también se toma en Lima.
+    Así da igual que el servidor (Render, GitHub Actions) esté en UTC.
+    """
+    ahora = ahora_lima()
+    inicio = datetime.fromisoformat(f'{reserva["fecha"]}T{reserva["hora_inicio"]}').replace(tzinfo=ahora.tzinfo)
+    return inicio > ahora + timedelta(hours=HORAS_MINIMAS_CANCELACION)
 
 
 def autorizar(usuario: Usuario, reserva: dict) -> None:

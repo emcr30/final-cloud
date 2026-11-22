@@ -6,8 +6,9 @@ pagaba en la pestaña de Stripe que seguía abierta → se cobraba sin reserva.
 Se usan dobles de prueba: un Supabase en memoria y un Stripe falso (no hay
 llamadas reales a ningún servicio, por eso corre igual en GitHub Actions).
 """
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 from types import SimpleNamespace
+from zoneinfo import ZoneInfo
 
 import pytest
 import stripe
@@ -20,11 +21,22 @@ from app.main import app
 from app.routers import pagos as pagos_router
 from app.routers import reservas as reservas_router
 from app.servicios import correo, pagos
+from app.servicios import reservas as reservas_servicio
 
 client = TestClient(app)
 
 JUGADOR, OTRO, PROPIETARIO = "jug-1", "jug-2", "prop-1"
-FECHA_LEJANA = (date.today() + timedelta(days=5)).isoformat()
+# Reloj congelado (hora de Lima) para que las pruebas no dependan del reloj
+# real ni de la zona horaria de la máquina (GitHub Actions corre en UTC).
+LIMA = ZoneInfo("America/Lima")
+AHORA = datetime(2026, 11, 21, 23, 30, tzinfo=LIMA)  # 23:30 en Lima = 04:30 UTC del día siguiente
+FECHA_LEJANA = (AHORA + timedelta(days=5)).date().isoformat()
+
+
+def _empieza_en(horas: int) -> dict:
+    """fecha y hora_inicio de una reserva que empieza `horas` después de AHORA (en Lima)."""
+    inicio = AHORA.replace(minute=0) + timedelta(hours=horas)
+    return {"fecha": inicio.date().isoformat(), "hora_inicio": inicio.strftime("%H:%M:%S")}
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +169,8 @@ class _StripeFalso:
 
 
 @pytest.fixture(autouse=True)
-def _limpiar_overrides():
+def _limpiar_overrides(monkeypatch):
+    monkeypatch.setattr(reservas_servicio, "ahora_lima", lambda: AHORA)
     yield
     app.dependency_overrides.clear()
 
@@ -290,12 +303,24 @@ def test_usuario_ajeno_no_puede_cancelar(monkeypatch):
     assert sb.reserva["estado"] == "pendiente_pago"
 
 
-def test_jugador_no_cancela_a_menos_de_2_horas(monkeypatch):
-    sb = _SupabaseFalso(fecha=date.today().isoformat(), hora_inicio="00:00:00")  # ya empezó
+@pytest.mark.parametrize("horas", [1, 2])
+def test_jugador_no_cancela_a_menos_de_2_horas(monkeypatch, horas):
+    """Empieza en 1 h (o justo en 2 h): ya no se puede cancelar → 409."""
+    sb = _SupabaseFalso(**_empieza_en(horas))
     st = _StripeFalso().instalar(monkeypatch)
     _como(JUGADOR)
     assert _cancelar(monkeypatch, sb).status_code == 409
     assert st.expiradas == [] and sb.reserva["estado"] == "pendiente_pago"
+
+
+def test_jugador_cancela_con_mas_de_2_horas_aunque_cambie_el_dia(monkeypatch):
+    """Empieza en 3 h: 02:00 del día siguiente en Lima (cruza la medianoche) → 200."""
+    sb = _SupabaseFalso(**_empieza_en(3))
+    assert sb.reserva["fecha"] == "2026-11-22" and sb.reserva["hora_inicio"] == "02:00:00"
+    _StripeFalso().instalar(monkeypatch)
+    _como(JUGADOR)
+    assert _cancelar(monkeypatch, sb).status_code == 200
+    assert sb.reserva["estado"] == "cancelada"
 
 
 def test_cancelar_sesion_ya_pagada_confirma_en_vez_de_cancelar(monkeypatch):
