@@ -14,6 +14,13 @@ def test_health_responde_ok():
     assert "hora" in datos
 
 
+def test_health_acepta_head():
+    """UptimeRobot (plan gratis) monitorea con HEAD: debe dar 200 y no 405."""
+    r = client.head("/health")
+    assert r.status_code == 200
+    assert r.content == b""  # HEAD no lleva cuerpo
+
+
 def test_health_servicios_no_expone_secretos():
     r = client.get("/health/servicios")
     assert r.status_code == 200

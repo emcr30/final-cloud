@@ -10,7 +10,9 @@ from app.limites import limiter
 router = APIRouter(tags=["salud"])
 
 
-@router.get("/health")
+# GET y HEAD: UptimeRobot (plan gratis) monitorea con HEAD. Con HEAD, FastAPI
+# ejecuta la misma función y Starlette envía solo las cabeceras, sin cuerpo.
+@router.api_route("/health", methods=["GET", "HEAD"])
 @limiter.exempt  # lo llaman Render y UptimeRobot cada pocos minutos
 def health() -> dict:
     """Devuelve el estado del servicio y la hora actual en Lima."""
