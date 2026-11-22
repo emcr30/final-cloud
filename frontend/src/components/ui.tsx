@@ -43,12 +43,13 @@ export function TarjetaAuth({ titulo, subtitulo, children }: { titulo: string; s
   )
 }
 
-/** Mensaje de error o éxito. */
-export function Alerta({ tipo = 'error', children }: { tipo?: 'error' | 'exito' | 'info'; children: ReactNode }) {
+/** Mensaje de error, éxito, información o aviso (amarillo). */
+export function Alerta({ tipo = 'error', children }: { tipo?: 'error' | 'exito' | 'info' | 'aviso'; children: ReactNode }) {
   const estilos = {
     error: 'border-red-200 bg-red-50 text-red-800',
     exito: 'border-cesped-300 bg-cesped-50 text-cesped-800',
     info: 'border-sky-200 bg-sky-50 text-sky-900',
+    aviso: 'border-amber-300 bg-amber-50 text-amber-900',
   }
   return <div role={tipo === 'error' ? 'alert' : 'status'} className={`rounded-xl border px-3.5 py-2.5 text-sm ${estilos[tipo]}`}>{children}</div>
 }

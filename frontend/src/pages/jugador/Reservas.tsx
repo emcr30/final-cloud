@@ -54,11 +54,17 @@ export default function MisReservas() {
     if (!confirm(`¿Cancelar tu reserva del ${fechaLarga(r.fecha)} a las ${hhmm(r.hora_inicio)}?`)) return
     setOcupada(r.id)
     setMensaje(null)
-    // RLS solo deja pasar el UPDATE si faltan más de 2 horas; si no, afecta 0 filas
-    const { data, error } = await supabase.from('reservas').update({ estado: 'cancelada' }).eq('id', r.id).select('id')
-    if (error) setMensaje({ tipo: 'error', texto: error.message })
-    else if (!data.length) setMensaje({ tipo: 'error', texto: 'Ya no se puede cancelar: faltan menos de 2 horas para el partido.' })
-    else setMensaje({ tipo: 'exito', texto: 'Reserva cancelada. El horario quedó libre para otros jugadores.' })
+    // Se cancela por el backend (no directo en Supabase): primero cierra la sesión
+    // de Stripe para que ya no se pueda pagar y valida la regla de 2 horas.
+    try {
+      const res = await api<{ resultado: 'cancelada' | 'pagada'; mensaje: string }>(
+        `/reservas/${r.id}/cancelar`, { method: 'POST' })
+      setMensaje(res.resultado === 'pagada'
+        ? { tipo: 'exito', texto: 'No se canceló: tu pago ya se había completado y la reserva quedó confirmada.' }
+        : { tipo: 'exito', texto: 'Reserva cancelada. El horario quedó libre para otros jugadores.' })
+    } catch (e) {
+      setMensaje({ tipo: 'error', texto: (e as Error).message })
+    }
     setOcupada(null)
     cargar()
   }

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CheckCircle2, Mail, MapPin, Printer } from 'lucide-react'
+import { CheckCircle2, Clock, Mail, MapPin, Printer, Undo2 } from 'lucide-react'
 import { api } from '../../lib/api'
 import { Alerta, Cargando } from '../../components/ui'
 
@@ -19,6 +19,32 @@ interface Comprobante {
   hora_fin: string
   monto: string
   correo?: 'enviado' | 'error' | 'omitido'
+  /**
+   * Qué pasó con el pago (lo decide el backend, no el navegador):
+   * - pagada:      reserva confirmada.
+   * - reembolsada: la reserva se canceló antes de completar el pago → se devolvió el dinero.
+   * - pendiente:   Stripe todavía no confirma el pago.
+   */
+  resultado: 'pagada' | 'reembolsada' | 'pendiente'
+  monto_reembolsado?: string
+}
+
+/** Aviso (sin comprobante) con botón para volver a Mis reservas. */
+function Aviso({ tipo, icono, titulo, children }: { tipo: 'aviso' | 'error' | 'info'; icono: ReactNode; titulo: string; children: ReactNode }) {
+  return (
+    <div className="mx-auto max-w-lg px-4 py-16">
+      <Alerta tipo={tipo}>
+        <div className="flex gap-3">
+          <span className="mt-0.5 shrink-0">{icono}</span>
+          <div>
+            <p className="font-semibold">{titulo}</p>
+            <div className="mt-1">{children}</div>
+          </div>
+        </div>
+      </Alerta>
+      <Link to="/jugador/reservas" className="mt-4 inline-block rounded-full bg-gray-900 px-4 py-2.5 font-semibold text-white hover:bg-cesped-600">Volver a Mis reservas</Link>
+    </div>
+  )
 }
 
 /**
@@ -42,13 +68,32 @@ export default function PagoExito() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16">
-        <Alerta>No pudimos confirmar tu pago: {error}</Alerta>
-        <Link to="/jugador/reservas" className="mt-4 inline-block font-semibold text-cesped-700 hover:underline">Ir a Mis reservas</Link>
-      </div>
+      <Aviso tipo="error" icono={<Clock size={20} />} titulo="No pudimos confirmar tu pago">
+        {error} Revisa el estado de tu reserva en Mis reservas.
+      </Aviso>
     )
   }
   if (!comprobante) return <Cargando texto="Confirmando tu pago con Stripe…" />
+
+  // Stripe cobró, pero la reserva ya estaba cancelada: el backend devolvió el dinero
+  if (comprobante.resultado === 'reembolsada') {
+    return (
+      <Aviso tipo="aviso" icono={<Undo2 size={20} />} titulo="Tu reserva no se confirmó">
+        Esta reserva fue cancelada antes de que se completara el pago. Te devolvimos el monto
+        {comprobante.monto_reembolsado && <> (<b>{comprobante.monto_reembolsado}</b>)</>}, verás el reembolso en tu
+        tarjeta en unos días.
+        {comprobante.correo === 'enviado' && <span className="mt-1 flex items-center gap-1"><Mail size={14} /> Te lo confirmamos por correo.</span>}
+      </Aviso>
+    )
+  }
+  // Stripe aún no marca la sesión como pagada (o el jugador volvió sin pagar)
+  if (comprobante.resultado !== 'pagada') {
+    return (
+      <Aviso tipo="info" icono={<Clock size={20} />} titulo="Tu pago todavía no está confirmado">
+        Stripe aún no nos confirma el pago. Si ya pagaste, en unos minutos tu reserva aparecerá como pagada en Mis reservas.
+      </Aviso>
+    )
+  }
 
   const filas: [string, string][] = [
     ['Complejo', comprobante.complejo],

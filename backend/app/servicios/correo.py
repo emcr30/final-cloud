@@ -60,6 +60,29 @@ def html_confirmacion(datos: dict) -> str:
 </div>"""
 
 
+def html_reembolso(datos: dict) -> str:
+    """Correo: la reserva se canceló antes de que se completara el pago y devolvimos el dinero."""
+    e = {k: escape(str(v)) for k, v in datos.items()}
+    return f"""\
+<div style="background:#f3f4f6;padding:24px;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+    <div style="background:#d97706;color:#ffffff;padding:20px 24px">
+      <div style="font-size:22px;font-weight:800">⚽ CanchaYa</div>
+      <div style="margin-top:4px;opacity:.9">Te devolvimos tu pago</div>
+    </div>
+    <div style="padding:24px;color:#111827">
+      <p style="margin:0 0 12px">Hola {e["nombre"]}:</p>
+      <p style="margin:0 0 12px">Tu reserva en <b>{e["complejo"]}</b> ({e["cancha"]}, {e["fecha_larga"]} a las
+        {e["hora_inicio"]}) fue cancelada antes de que se completara el pago, así que
+        <b>te devolvimos {e["monto_reembolsado"]}</b>.</p>
+      <p style="margin:0;color:#6b7280;font-size:14px">El reembolso aparecerá en tu tarjeta en unos días
+        (depende de tu banco). No tienes que hacer nada más.</p>
+      <p style="margin:20px 0 0;font-size:12px;color:#6b7280">Código de reserva: {e["reserva_id"]}</p>
+    </div>
+  </div>
+</div>"""
+
+
 def registrar(sb: Client, reserva_id: str, tipo: str, destinatario: str, estado: str, detalle: str | None = None) -> None:
     """Guarda el intento de envío en notificaciones_log (auditoría)."""
     sb.table("notificaciones_log").insert({
@@ -68,22 +91,29 @@ def registrar(sb: Client, reserva_id: str, tipo: str, destinatario: str, estado:
     }).execute()
 
 
-def enviar_confirmacion(sb: Client, destinatario: str, datos: dict) -> str:
-    """Envía el correo de confirmación y lo registra. Devuelve el estado: enviado | error | omitido."""
+def enviar(sb: Client, tipo: str, destinatario: str, reserva_id: str, asunto: str, html: str) -> str:
+    """Envía un correo con Resend y lo registra. Devuelve el estado: enviado | error | omitido."""
     s = get_settings()
     if not s.resend_api_key:
-        registrar(sb, datos["reserva_id"], "confirmacion", destinatario, "omitido", "RESEND_API_KEY no configurada")
+        registrar(sb, reserva_id, tipo, destinatario, "omitido", "RESEND_API_KEY no configurada")
         return "omitido"
     resend.api_key = s.resend_api_key
     try:
-        r = resend.Emails.send({
-            "from": s.email_from,
-            "to": [destinatario],
-            "subject": f'Reserva confirmada: {datos["complejo"]} · {datos["fecha_larga"]} {datos["hora_inicio"]}',
-            "html": html_confirmacion(datos),
-        })
-        registrar(sb, datos["reserva_id"], "confirmacion", destinatario, "enviado", f"resend id {r.get('id')}")
+        r = resend.Emails.send({"from": s.email_from, "to": [destinatario], "subject": asunto, "html": html})
+        registrar(sb, reserva_id, tipo, destinatario, "enviado", f"resend id {r.get('id')}")
         return "enviado"
     except Exception as e:  # noqa: BLE001 — cualquier fallo de Resend se registra, no se propaga
-        registrar(sb, datos["reserva_id"], "confirmacion", destinatario, "error", str(e)[:500])
+        registrar(sb, reserva_id, tipo, destinatario, "error", str(e)[:500])
         return "error"
+
+
+def enviar_confirmacion(sb: Client, destinatario: str, datos: dict) -> str:
+    """Correo "¡Tu reserva está confirmada!" después del pago."""
+    asunto = f'Reserva confirmada: {datos["complejo"]} · {datos["fecha_larga"]} {datos["hora_inicio"]}'
+    return enviar(sb, "confirmacion", destinatario, datos["reserva_id"], asunto, html_confirmacion(datos))
+
+
+def enviar_reembolso(sb: Client, destinatario: str, datos: dict) -> str:
+    """Correo "Tu reserva fue cancelada antes del pago; te devolvimos S/ X"."""
+    asunto = f'Tu reserva fue cancelada antes del pago; te devolvimos {datos["monto_reembolsado"]}'
+    return enviar(sb, "reembolso", destinatario, datos["reserva_id"], asunto, html_reembolso(datos))

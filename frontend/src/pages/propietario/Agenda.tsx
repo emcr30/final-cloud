@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CalendarCheck, ChevronLeft, ChevronRight, Lock, Phone, User, XCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { ESTADO_RESERVA, fechaCorta, fechaLarga, hhmm, hoyLima, instanteLima, soles, sumarDias, type EstadoReserva } from '../../lib/canchas'
 import { DIAS_CORTOS, horaNum, horaTexto, lunesDe, type ComplejoPanel } from '../../lib/panel'
@@ -94,10 +95,23 @@ export default function Agenda() {
       : '¿Cancelar esta reserva? Si el jugador ya pagó, el reembolso se gestiona aparte (modo prueba).'
     if (!confirm(texto)) return
     setOcupado(true)
-    const { data, error } = await supabase.from('reservas').update({ estado }).eq('id', r.id).select('id')
-    setMensaje(error ? { tipo: 'error', texto: error.message }
-      : !data.length ? { tipo: 'error', texto: 'No se pudo actualizar la reserva.' }
-      : { tipo: 'exito', texto: estado === 'completada' ? 'Reserva marcada como completada.' : r.es_bloqueo ? 'Bloqueo quitado.' : 'Reserva cancelada.' })
+    if (estado === 'cancelada') {
+      // Cancelar va por el backend: expira la sesión de Stripe abierta (si la hay)
+      // para que el jugador ya no pueda pagar una reserva cancelada.
+      try {
+        const res = await api<{ resultado: 'cancelada' | 'pagada' }>(`/reservas/${r.id}/cancelar`, { method: 'POST' })
+        setMensaje(res.resultado === 'pagada'
+          ? { tipo: 'exito', texto: 'No se canceló: el jugador ya había pagado y la reserva quedó confirmada.' }
+          : { tipo: 'exito', texto: r.es_bloqueo ? 'Bloqueo quitado.' : 'Reserva cancelada.' })
+      } catch (e) {
+        setMensaje({ tipo: 'error', texto: (e as Error).message })
+      }
+    } else {
+      const { data, error } = await supabase.from('reservas').update({ estado }).eq('id', r.id).select('id')
+      setMensaje(error ? { tipo: 'error', texto: error.message }
+        : !data.length ? { tipo: 'error', texto: 'No se pudo actualizar la reserva.' }
+        : { tipo: 'exito', texto: 'Reserva marcada como completada.' })
+    }
     setSeleccion(null)
     setOcupado(false)
     recargar()

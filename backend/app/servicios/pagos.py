@@ -9,6 +9,10 @@ Flujo:
 
 confirmar_pago() es IDEMPOTENTE: aunque lo llamen la página de éxito y el
 webhook al mismo tiempo, la reserva se marca y el correo se envía una sola vez.
+
+Caso borde: si Stripe cobró pero la reserva ya no estaba pendiente (el jugador
+o el propietario la canceló con la pestaña de Stripe todavía abierta), se
+devuelve el dinero automáticamente (reembolsar_pago_huerfano).
 """
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -121,16 +125,38 @@ def datos_comprobante(reserva: dict) -> dict:
     }
 
 
-def confirmar_pago(sb: Client, sesion) -> dict:
-    """Marca como pagada la reserva de una sesión de Stripe ya pagada (idempotente).
+def formato_monto(centavos: int, moneda: str) -> str:
+    """12000, 'pen' → 'S/ 120.00'  ·  12000, 'usd' → 'USD 120.00'."""
+    simbolo = "S/" if moneda.lower() == "pen" else moneda.upper()
+    return f"{simbolo} {centavos / 100:.2f}"
 
-    Devuelve el comprobante y si este llamado fue el que confirmó (primera vez).
+
+def datos_jugador(sb: Client, jugador_id: str) -> tuple[str, str]:
+    """(email, nombre) del jugador. El email vive en auth.users: se lee con la service role."""
+    usuario = sb.auth.admin.get_user_by_id(jugador_id).user
+    perfil = sb.table("profiles").select("nombre").eq("id", jugador_id).maybe_single().execute()
+    nombre = (perfil.data or {}).get("nombre") if perfil else None
+    return usuario.email, nombre or "jugador"
+
+
+def confirmar_pago(sb: Client, sesion) -> dict:
+    """Procesa una sesión de Stripe (la llaman /pagos/verificar, el webhook y la limpieza).
+
+    Devuelve el comprobante con un campo `resultado` para el frontend:
+    - "pagada":      el pago quedó registrado y la reserva confirmada.
+    - "reembolsada": Stripe cobró pero la reserva ya no estaba pendiente
+                     (se canceló antes de pagar) → se devolvió el dinero.
+    - "pendiente":   Stripe todavía no confirma el pago.
+    Es idempotente: llamarla dos veces (o a la vez) da el mismo resultado,
+    un solo correo y, si corresponde, un solo reembolso.
     """
     reserva_id = (sesion.metadata or {}).get("reserva_id") or sesion.client_reference_id
     if not reserva_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "La sesión de Stripe no tiene reserva asociada")
+
     if sesion.payment_status != "paid":
-        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "El pago todavía no se completó")
+        reserva = leer_reserva(sb, reserva_id)
+        return {**datos_comprobante(reserva), "resultado": "pendiente", "primera_vez": False}
 
     # UPDATE condicional = candado: solo UNA llamada cambia pendiente_pago → pagada.
     # Esa es la única que registra el pago y envía el correo.
@@ -161,14 +187,99 @@ def confirmar_pago(sb: Client, sesion) -> dict:
     comprobante = datos_comprobante(reserva)
 
     if primera_vez:
-        # Correo al jugador (el email vive en auth.users, se lee con la service role)
-        usuario = sb.auth.admin.get_user_by_id(reserva["jugador_id"]).user
-        perfil = sb.table("profiles").select("nombre").eq("id", reserva["jugador_id"]).maybe_single().execute()
-        nombre = (perfil.data or {}).get("nombre") if perfil else None
-        comprobante["correo"] = correo.enviar_confirmacion(
-            sb, usuario.email, {**comprobante, "nombre": nombre or "jugador"},
+        email, nombre = datos_jugador(sb, reserva["jugador_id"])
+        comprobante["correo"] = correo.enviar_confirmacion(sb, email, {**comprobante, "nombre": nombre})
+        return {**comprobante, "resultado": "pagada", "primera_vez": True}
+
+    # La reserva NO estaba pendiente. ¿Ya la confirmó esta misma sesión antes
+    # (segunda llamada de la página de éxito o del webhook)? → todo bien.
+    if reserva["estado"] in ("pagada", "completada") and reserva.get("stripe_session_id") == sesion.id:
+        return {**comprobante, "resultado": "pagada", "primera_vez": False}
+
+    # Si no: Stripe cobró una reserva cancelada (o cuyo horario ya es de otra
+    # persona). Ese dinero no corresponde → se devuelve.
+    return reembolsar_pago_huerfano(sb, sesion, reserva, comprobante)
+
+
+def reembolsar_pago_huerfano(sb: Client, sesion, reserva: dict, comprobante: dict) -> dict:
+    """Devuelve en Stripe el pago de una reserva que ya no estaba pendiente.
+
+    Idempotencia (verificación y webhook pueden llegar a la vez):
+    1. "Reclamamos" el reembolso insertando la fila en `pagos` con estado
+       'reembolsado'. stripe_session_id es UNIQUE: solo UNA llamada logra
+       insertarla; las demás ven la fila existente y no reembolsan otra vez.
+    2. Además el Refund lleva idempotency_key = id de la sesión: aunque se
+       llamara dos veces, Stripe crea un solo reembolso.
+    """
+    monto_txt = formato_monto(sesion.amount_total, sesion.currency)
+    reclamo = sb.table("pagos").upsert(
+        {
+            "reserva_id": reserva["id"],
+            "monto": sesion.amount_total / 100,
+            "moneda": sesion.currency,
+            "stripe_session_id": sesion.id,
+            "stripe_payment_intent": sesion.payment_intent,
+            "estado": "reembolsado",
+        },
+        on_conflict="stripe_session_id",
+        ignore_duplicates=True,  # ON CONFLICT DO NOTHING: si ya existe, data = []
+    ).execute()
+
+    if not reclamo.data:
+        # Otra llamada ya registró esta sesión: respondemos según lo que guardó
+        previo = (
+            sb.table("pagos").select("estado").eq("stripe_session_id", sesion.id)
+            .maybe_single().execute()
         )
-    return {**comprobante, "primera_vez": primera_vez}
+        estado_previo = (previo.data or {}).get("estado") if previo else None
+        resultado = "pagada" if estado_previo == "pagado" else "reembolsada"
+        return {**comprobante, "resultado": resultado, "monto_reembolsado": monto_txt, "primera_vez": False}
+
+    # Somos la única llamada que reembolsa
+    configurar_stripe()
+    try:
+        reembolso = stripe.Refund.create(
+            payment_intent=sesion.payment_intent,
+            reason="requested_by_customer",
+            metadata={"reserva_id": reserva["id"], "motivo": "reserva cancelada antes del pago"},
+            idempotency_key=f"reembolso-{sesion.id}",
+        )
+    except stripe.StripeError as e:
+        # Se borra el reclamo para que el próximo intento (p. ej. el reintento del webhook) lo haga
+        sb.table("pagos").delete().eq("stripe_session_id", sesion.id).is_("stripe_refund_id", "null").execute()
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"No se pudo reembolsar en Stripe: {e.user_message or e}") from e
+
+    sb.table("pagos").update({"stripe_refund_id": reembolso.id}).eq("stripe_session_id", sesion.id).execute()
+
+    email, nombre = datos_jugador(sb, reserva["jugador_id"])
+    estado_correo = correo.enviar_reembolso(
+        sb, email, {**comprobante, "nombre": nombre, "monto_reembolsado": monto_txt},
+    )
+    return {**comprobante, "resultado": "reembolsada", "monto_reembolsado": monto_txt,
+            "correo": estado_correo, "primera_vez": True}
+
+
+def cerrar_sesion(sid: str):
+    """Deja la sesión de Stripe sin posibilidad de pago (la expira si sigue abierta).
+
+    Devuelve la sesión si resultó que YA estaba pagada (el que llama debe
+    confirmar el pago en vez de cancelar), o None si ya no se puede pagar.
+    """
+    configurar_stripe()
+    sesion = stripe.checkout.Session.retrieve(sid)
+    if sesion.payment_status == "paid":
+        return sesion
+    if sesion.status == "open":
+        try:
+            stripe.checkout.Session.expire(sid)
+        except stripe.StripeError:
+            # Carrera: el jugador pagó (o la sesión venció) justo en este momento
+            sesion = stripe.checkout.Session.retrieve(sid)
+            if sesion.payment_status == "paid":
+                return sesion
+            if sesion.status == "open":
+                raise  # sigue abierta y no pudimos cerrarla: no es seguro cancelar
+    return None
 
 
 def minutos_expiracion(sb: Client) -> int:
@@ -201,26 +312,15 @@ def limpiar_pendientes(sb: Client) -> dict:
     ) or []
 
     canceladas, confirmadas = 0, 0
-    if any(p.get("stripe_session_id") for p in pendientes):
-        configurar_stripe()
     for p in pendientes:
         sid = p.get("stripe_session_id")
         if sid:
-            sesion = stripe.checkout.Session.retrieve(sid)
-            if sesion.payment_status == "paid":
-                confirmar_pago(sb, sesion)
+            pagada = cerrar_sesion(sid)
+            if pagada:
+                # El webhook no llegó pero sí pagó → se confirma en vez de cancelar
+                confirmar_pago(sb, pagada)
                 confirmadas += 1
                 continue
-            if sesion.status == "open":
-                try:
-                    stripe.checkout.Session.expire(sid)
-                except stripe.StripeError:
-                    # Carrera: el jugador pagó justo ahora → se confirma en vez de cancelar
-                    sesion = stripe.checkout.Session.retrieve(sid)
-                    if sesion.payment_status == "paid":
-                        confirmar_pago(sb, sesion)
-                        confirmadas += 1
-                        continue
         r = sb.table("reservas").update({"estado": "cancelada"}).eq("id", p["id"]).eq("estado", "pendiente_pago").execute()
         canceladas += len(r.data or [])
     return {"revisadas": len(pendientes), "canceladas": canceladas, "confirmadas": confirmadas, "minutos": minutos}

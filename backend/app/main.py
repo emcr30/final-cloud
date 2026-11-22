@@ -11,7 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.config import get_settings, validar_service_role_key
 from app.limites import demasiadas_peticiones, limiter
-from app.routers import admin, health, me, pagos, reportes, tareas
+from app.routers import admin, health, me, pagos, reportes, reservas, tareas
 
 settings = get_settings()
 
@@ -49,6 +49,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(me.router)
 app.include_router(pagos.router)
+app.include_router(reservas.router)
 app.include_router(tareas.router)
 app.include_router(reportes.router)
 app.include_router(admin.router)
