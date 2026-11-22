@@ -3,7 +3,8 @@
 Uso (desde la raíz del repo, con el venv del backend):
     backend/.venv/bin/python scripts/crear_usuarios_demo.py
 
-Lee SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY de backend/.env (o del entorno).
+Lee SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y DEMO_PASSWORD de backend/.env (o del entorno).
+La contraseña de los usuarios demo NO se guarda en el repositorio.
 Es idempotente: si un usuario ya existe, le restablece la contraseña y el rol.
 """
 import os
@@ -16,7 +17,6 @@ sys.path.insert(0, str(RAIZ / "backend"))  # para reutilizar la validación de l
 from app.config import validar_service_role_key  # noqa: E402
 from supabase import create_client  # noqa: E402
 
-PASSWORD = "Demo1234!"
 USUARIOS = [
     # email, nombre, teléfono, rol
     ("admin@canchaya.demo", "Ana Admin", "999000001", "admin"),
@@ -59,6 +59,10 @@ def main() -> None:
     llave = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or env.get("SUPABASE_SERVICE_ROLE_KEY", "")
     if not url or not llave:
         sys.exit("Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en backend/.env")
+    # Contraseña de los usuarios demo: solo en backend/.env (que no se sube a git)
+    PASSWORD = os.environ.get("DEMO_PASSWORD") or env.get("DEMO_PASSWORD", "")
+    if not PASSWORD:
+        sys.exit("Falta DEMO_PASSWORD en backend/.env (contraseña de los usuarios demo)")
     try:
         validar_service_role_key(llave)
     except RuntimeError as e:

@@ -25,3 +25,6 @@ supabase/.branches/
 CLAUDE.md
 PROMPTS_CLAUDE_CODE.md
 .claude/
+
+# Documentación interna (notas, guion, pendientes): solo local, no se sube
+docs/

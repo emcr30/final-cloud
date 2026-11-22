@@ -6,6 +6,17 @@ Plataforma **SaaS multi-tenant** para reservar canchas de fútbol en Arequipa. V
 
 > Trabajo final del curso **Cloud Computing** (Ingeniería de Software).
 
+## En producción
+
+| Servicio | URL |
+|---|---|
+| Aplicación (Vercel) | https://final-cloud-liard.vercel.app |
+| API (Render) | https://canchaya-api-e2nd.onrender.com — salud: [`/health`](https://canchaya-api-e2nd.onrender.com/health) · documentación: [`/docs`](https://canchaya-api-e2nd.onrender.com/docs) |
+| Estado del servicio | https://final-cloud-liard.vercel.app/estado |
+| Base de datos, Auth y Storage | Supabase (proyecto `cancha-final`) |
+
+Monitoreo: UptimeRobot consulta `/health` cada 5 minutos (además evita que Render se duerma).
+
 ## Roles
 
 | Rol | Qué hace | MFA |
@@ -36,7 +47,6 @@ flowchart LR
 | Frontend | React + Vite + TypeScript, Tailwind CSS, React Router, Recharts, react-leaflet | `frontend/` |
 | Backend | Python 3.12, FastAPI, Supabase, Stripe, Resend (Docker) | `backend/` |
 | Base de datos | Supabase Postgres con RLS, migraciones SQL, Edge Functions | `supabase/` |
-| Documentación | Diagramas, avance, notas del informe | `docs/` |
 
 ## Cómo correr en local
 
@@ -87,31 +97,16 @@ docker run --env-file .env -p 8000:8000 canchaya-api
 │   │   └── servicios/       # Stripe, Resend, PDF
 │   └── tests/               # pytest (43 pruebas)
 ├── supabase/
-│   ├── migrations/          # SQL: tablas, RLS, vistas, métricas, cron
-│   ├── pendientes/          # migración de limpieza (se aplica tras el deploy)
+│   ├── migrations/          # SQL: tablas, RLS, vistas, métricas, cron (recordatorios y limpieza)
 │   ├── tests/               # prueba de aislamiento multi-tenant
 │   ├── functions/send-reminders/  # Edge Function (Deno)
 │   └── seed.sql             # complejos demo en Arequipa
 ├── scripts/                 # usuarios demo, prueba de carga
 ├── render.yaml              # Blueprint de Render
-├── .github/workflows/ci.yml # CI: lint, build, pytest, Docker
-└── docs/                    # documentación del informe
+└── .github/workflows/ci.yml # CI: lint, build, pytest, Docker
 ```
-
-## Documentación
-
-| Documento | Contenido |
-|---|---|
-| [docs/arquitectura.md](docs/arquitectura.md) | Diagramas: arquitectura cloud, ER, reserva y pago, login con MFA, CI/CD |
-| [docs/modulos.md](docs/modulos.md) | Módulos, descripción y nivel de acceso por rol; endpoints |
-| [docs/seguridad.md](docs/seguridad.md) | Autenticación, MFA, RLS (24 políticas), cifrado, secretos, backups y recuperación |
-| [docs/costos.md](docs/costos.md) | Costo actual (S/ 0) y estimación al crecer (USD y PEN) |
-| [docs/pruebas.md](docs/pruebas.md) | Pruebas unitarias, aislamiento multi-tenant, funcionales y de carga |
-| [docs/guion_demo.md](docs/guion_demo.md) | Guion de la demo de 15 min con credenciales |
-| [docs/AVANCE.md](docs/AVANCE.md) | Avance detallado por partes y cómo probar cada una |
-| [docs/PENDIENTES_EVELYN.md](docs/PENDIENTES_EVELYN.md) | Checklist de despliegue (Vercel, Render, Supabase, Stripe, UptimeRobot) |
 
 ## Usuarios demo
 
-Contraseña de todos: `Demo1234!` — `admin@canchaya.demo`, `propietario1@canchaya.demo`, `propietario2@canchaya.demo`, `jugador@canchaya.demo`.
-Se crean con `backend/.venv/bin/python scripts/crear_usuarios_demo.py`. Tarjeta de prueba de Stripe: `4242 4242 4242 4242`.
+`admin@canchaya.demo`, `propietario1@canchaya.demo`, `propietario2@canchaya.demo`, `jugador@canchaya.demo` y otros jugadores `@canchaya.demo`.
+Se crean con `backend/.venv/bin/python scripts/crear_usuarios_demo.py`, usando la contraseña de `DEMO_PASSWORD` en `backend/.env` (no se publica en el repositorio). Tarjeta de prueba de Stripe: `4242 4242 4242 4242`.

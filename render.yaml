@@ -24,7 +24,7 @@ services:
         value: CanchaYa <onboarding@resend.dev>
       - key: MINUTOS_EXPIRACION_PENDIENTE
         value: "15"
-      # URL del frontend en Vercel (CORS y redirecciones de Stripe), p. ej. https://canchaya.vercel.app
+      # URL del frontend en Vercel (CORS y redirecciones de Stripe), producción: https://final-cloud-liard.vercel.app
       - key: FRONTEND_URL
         sync: false
       - key: SUPABASE_URL
